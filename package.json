@@ -1,0 +1,38 @@
+{
+  "name": "taskorama",
+  "version": "0.0.1",
+  "description": "Taskorama",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --reporter spec --compilers js:babel-core/register",
+    "clean-dist": "rimraf dist",
+    "prestart": "npm run clean-dist",
+    "start": "babel-node src/index.js",
+    "dev": "npm run prestart && webpack --env.dev --progress --color --watch",
+    "build": "npm run prestart && webpack --env.prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://YannickDot@github.com/YannickDot/taskorama.git"
+  },
+  "author": "Yannick Spark <sparky.creativespace@gmail.com> (https://sparkyspace.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YannickDot/taskorama/issues"
+  },
+  "homepage": "https://github.com/YannickDot/taskorama#readme",
+  "devDependencies": {
+    "babel-cli": "^6.11.4",
+    "babel-core": "^6.13.2",
+    "babel-loader": "^6.2.4",
+    "babel-plugin-flow-comments": "^6.3.19",
+    "babel-plugin-transform-flow-strip-types": "^6.8.0",
+    "babel-preset-es2015": "^6.13.2",
+    "babel-preset-es2016": "^6.11.3",
+    "babel-preset-node6": "^11.0.0",
+    "chai": "^3.5.0",
+    "mocha": "^3.0.2",
+    "rimraf": "^2.5.4",
+    "webpack": "^2.1.0-beta.20"
+  }
+}
