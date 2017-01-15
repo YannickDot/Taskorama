@@ -29,7 +29,6 @@ module.exports = env => {
       ]
     },
     plugins: removeEmpty([
-      ifProd(new webpack.optimize.DedupePlugin()),
       ifProd(new webpack.LoaderOptionsPlugin({
          minimize : true,
          debug: false

@@ -1,10 +1,10 @@
 # Taskorama
 
-⚙ - Tasks for the masses
+[![NPM](https://img.shields.io/npm/v/taskorama.svg?style=flat)](https://www.npmjs.org/package/taskorama)
 
-I created this lib when I tried to implement Tasks in JavaScript in order to understand how do they work.
 
-They happen to be really simple and have richer semantics than Promises. So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
+⚙ - **A tiny functional task library (~3Kb)**
+
 
 ## Install
 
@@ -57,3 +57,12 @@ const runningTask = task.fork(
 runningTask.cancel() // --> 'cancelled !'
 
 ```
+
+## Rationale
+
+I created this lib when I tried to implement Tasks in JavaScript in order to understand how do they work.
+
+They happen to be really simple and have richer semantics than Promises. So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
+
+I started this project after watching [this talk](https://www.youtube.com/watch?v=uQ1zhJHclvs) about Observables.
+The internals of taskorama are close to the case explained in this video.
