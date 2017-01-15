@@ -58,7 +58,7 @@ runningTask.cancel() // --> 'cancelled !'
 
 ```
 
-👷 _ ... more examples to come ... _ 👷
+👷 ... more examples to come ...  👷
 
 _You can still have a look at the [tonic-example.js](./tonic-example.js) file_
 
