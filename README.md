@@ -58,6 +58,10 @@ runningTask.cancel() // --> 'cancelled !'
 
 ```
 
+👷 _ ... more examples to come ... _ 👷
+
+_You can still have a look at the [tonic-example.js](./tonic-example.js) file_
+
 ## Rationale
 
 I created this lib when I tried to implement Tasks in JavaScript in order to understand how do they work.
