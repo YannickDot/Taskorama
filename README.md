@@ -1,6 +1,8 @@
 # Taskorama
 
 [![NPM](https://img.shields.io/npm/v/taskorama.svg?style=flat)](https://www.npmjs.org/package/taskorama)
+[![License: MIT](http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/YannickDot/taskorama/blob/master/LICENSE)
+
 
 
 ⚙ - **A tiny functional task library (~3Kb)**
@@ -11,11 +13,13 @@ import Task from 'taskorama'
 
 // Let's create a Task
 const myTimeoutTask = Task(function (resolve, reject) {
+
   // complete task succesfully after 3s
   let timer = setTimeout(resolve, 3000)
 
   // execute `cancel` to stop the timeout
   let cancel = () => clearTimeout(timer)
+  
   return {cancel}
 })
 
