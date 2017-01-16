@@ -1,12 +1,13 @@
 export default function Task (subscribe) {
-  return {
+  return Object.freeze({
+    isTask: true,
     fork: flip2(subscribe),
     run: (cb) => subscribe(cb, console.error),
     map: map,
     ap: ap,
     chain: chain,
     flatMap: chain
-  }
+  })
 }
 
 Task.of = (value) => {
