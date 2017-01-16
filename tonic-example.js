@@ -1,5 +1,4 @@
-// const Task = require("taskorama").default
-const Task = require("./dist/taskorama.min.js").default
+const Task = require("taskorama").default
 
 
 // Task.of()
