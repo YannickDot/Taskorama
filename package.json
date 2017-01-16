@@ -31,7 +31,8 @@
     "url": "https://github.com/YannickDot/taskorama/issues"
   },
   "files": [
-    "dist/taskorama.min.js"
+    "dist/taskorama.min.js",
+    "tonic-example.js"
   ],
   "tonicExampleFilename": "tonic-example.js",
   "homepage": "https://github.com/YannickDot/taskorama#readme",
