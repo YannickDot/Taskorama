@@ -1,12 +1,16 @@
-# Taskorama
+<p align="center">
+  <h1 align="center">Taskorama ⚙ </h1>
+  <p align="center">
+    <b align="center">Taskorama is a tiny functional task data type library for JavaScript (~3Kb)</b>
+  </p>
+  <p align="center">
+    <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
+  </p>
+  
+</p>
 
-[![NPM](https://img.shields.io/npm/v/taskorama.svg?style=flat)](https://www.npmjs.org/package/taskorama)
-[![License: MIT](http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat)](https://github.com/YannickDot/taskorama/blob/master/LICENSE)
 
-
-
-⚙ - **A tiny functional task library (~3Kb)**
-
+--
 
 ```js
 import Task from 'taskorama'
@@ -32,10 +36,9 @@ const myTimeoutExec = myTimeoutTask.fork(
 // Cancel `myTimeoutTask` when you need to !
 myTimeoutExec.cancel()
 
-// It's like Promises but cancellable 😄
-
 ```
 
+<p align="center">It's like Promises but cancellable 😄</p>
 
 
 
@@ -95,7 +98,7 @@ runningTask.cancel() // --> 'cancelled !'
 ## API
 
 
-### Instance
+### Instance methods
 
 ```js
 // create a Task
@@ -153,7 +156,7 @@ myTimeoutTask
 ```
 
 
-### Static
+### Static methods
 
 #### Task.of / Task.resolve
 
