@@ -1,6 +1,6 @@
 {
   "name": "taskorama",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Taskorama",
   "main": "dist/taskorama.min.js",
   "scripts": {
