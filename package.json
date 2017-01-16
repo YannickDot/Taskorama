@@ -9,7 +9,8 @@
     "prestart": "npm run clean-dist",
     "start": "babel-node src/index.js",
     "dev": "npm run prestart && webpack --env.dev --progress --color --watch",
-    "build": "npm run prestart && webpack --env.prod"
+    "build": "npm run prestart && webpack --env.prod",
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",
