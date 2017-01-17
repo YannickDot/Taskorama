@@ -159,6 +159,7 @@ myTimeoutTask
 ### Static methods
 
 #### Task.of / Task.resolve
+Creates a task that completes immediately with the passed value.
 
 ```js
 const task = Task.of(200)
@@ -167,6 +168,7 @@ task.fork(console.error, console.log)
 ```
 
 #### Task.reject
+Creates a task that rejects immediately with the passed value.
 
 ```js
 const task = Task.reject(404)
@@ -175,14 +177,27 @@ task.fork(console.error, console.log)
 ```
 
 #### Task.wait
+Creates a task that completes after a certain duration (first argument). 
+It resolves with the value passed as second argument.
 
 ```js
 const timeoutTask = Task.wait(10000, "I'm done !")
-timeoutTask.fork(console.error, console.log)
+const execTimeout = timeoutTask.fork(console.error, console.log)
 // logs: "I'm done !" - after 10s
 ```
 
-#### Task.all
+It can be cancelled like this : 
+```js
+execTimeout.cancel()
+// the timeout is cancelled.
+``` 
+
+#### Task.all(array)
+Creates a task that completes when all the tasks in the array are completed. 
+It resolves with an array containing each value of each task of the array.
+If any of them rejects, the returned task rejects with the rejection reason.
+
+If it is cancelled, it cancels all the tasks in the array as well.
 
 ```js
 const taskArray = [
@@ -194,11 +209,15 @@ const taskArray = [
 
 const startTime = Date.now()
 const tasksAll = Task.all(taskArray)
-const execAll = tasksAll.fork(console.error, console.log)
+
+tasksAll.fork(console.error, console.log)
 // logs: ['one', 'two', 'three', 'four'] - after 4s
 ```
 
 #### Task.race
+Creates a task that is fulfilled or rejected as soon as a task in the array is fulfilled or rejected.
+
+If it is cancelled, it cancels all the tasks in the array as well.
 
 ```js
 const taskArray = [
@@ -210,16 +229,20 @@ const taskArray = [
 
 const startTime = Date.now()
 const tasksRace = Task.race(taskArray)
-const execRace = tasksRace.fork(console.error, console.log)
+
+tasksRace.fork(console.error, console.log)
 // logs: 'three' - after 1s
 ```
 
 #### Task.fromPromise
+Creates a task from an existing Promise.
+Such a task cannot be cancelled because a Promise is not cancellable.
 
 ```js
 const p = Promise.resolve(2)
 const taskFromPromise = Task.fromPromise(p)
-const execTaskFromPromise = taskFromPromise.fork(console.error, console.log)
+
+taskFromPromise.fork(console.error, console.log)
 // logs: 2
 ```
 
