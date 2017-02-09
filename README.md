@@ -6,7 +6,7 @@
   <p align="center">
     <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
   </p>
-  
+
 </p>
 
 
@@ -23,7 +23,7 @@ const myTimeoutTask = Task(function (resolve, reject) {
 
   // execute `cancel` to stop the timeout
   let cancel = () => clearTimeout(timer)
-  
+
   return {cancel}
 })
 
@@ -155,6 +155,16 @@ myTimeoutTask
 // logs: 85
 ```
 
+#### .then()
+
+```js
+myTimeoutTask
+  .then(x => x * 2)
+  .then(val => Task.of(val + 1))
+  .fork(console.error, console.log)
+// logs: 85
+```
+
 
 ### Static methods
 
@@ -177,7 +187,7 @@ task.fork(console.error, console.log)
 ```
 
 #### Task.wait
-Creates a task that completes after a certain duration (first argument). 
+Creates a task that completes after a certain duration (first argument).
 It resolves with the value passed as second argument.
 
 ```js
@@ -186,14 +196,14 @@ const execTimeout = timeoutTask.fork(console.error, console.log)
 // logs: "I'm done !" - after 10s
 ```
 
-It can be cancelled like this : 
+It can be cancelled like this :
 ```js
 execTimeout.cancel()
 // the timeout is cancelled.
-``` 
+```
 
 #### Task.all(array)
-Creates a task that completes when all the tasks in the array are completed. 
+Creates a task that completes when all the tasks in the array are completed.
 It resolves with an array containing each value of each task of the array.
 If any of them rejects, the returned task rejects with the rejection reason.
 

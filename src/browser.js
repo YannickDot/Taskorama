@@ -39,3 +39,5 @@ Task.fetch = function(url: string): TaskInstance {
     return { cancel };
   });
 };
+
+export default Task
