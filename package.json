@@ -2,7 +2,7 @@
   "name": "taskorama",
   "version": "1.2.0",
   "description": "Taskorama",
-  "main": "dist/taskorama.min.js",
+  "main": "dist/main.js",
   "scripts": {
     "test": "mocha --reporter spec --compilers js:babel-core/register",
     "clean-dist": "rimraf dist",

@@ -10,13 +10,21 @@ module.exports = env => {
 
   return {
     devtool: env.prod ? 'source-map' : 'eval',
-    entry: removeEmpty([
-      './src/index.js',
-    ]),
+    entry: {
+      main: removeEmpty([
+        './src/index.js',
+      ]),
+      browser: removeEmpty([
+        './src/browser.js',
+      ]),
+      // server: removeEmpty([
+      //   './src/server.js',
+      // ])
+    },
     context: resolve(__dirname, ''),
     output: {
       path: join(__dirname, 'dist'),
-      filename: libraryName + (env.prod ? '.min.js' : '.js'),
+      filename: '[name].js',
       publicPath: '',
       library: libraryName,
       libraryTarget: 'umd',
@@ -34,6 +42,7 @@ module.exports = env => {
          debug: false
       })),
       ifProd(new webpack.optimize.UglifyJsPlugin({
+        mangle: true,
         compress: {
           screw_ie8: true,
           warnings: false
