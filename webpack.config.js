@@ -23,7 +23,7 @@ module.exports = env => {
     },
     context: resolve(__dirname, ''),
     output: {
-      path: join(__dirname, 'dist'),
+      path: env.prod ? join(__dirname, '') : join(__dirname, 'dist'),
       filename: '[name].js',
       publicPath: '',
       library: libraryName,
