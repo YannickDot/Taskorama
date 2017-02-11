@@ -41,3 +41,5 @@ main.js
 server.js
 
 dist/
+
+test/dev.js

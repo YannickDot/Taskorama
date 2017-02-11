@@ -4,3 +4,6 @@ webpack.config.js
 .babelrc
 dist/
 src/
+test/
+
+index.html
