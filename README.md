@@ -165,6 +165,19 @@ myTimeoutTask
 // logs: 85
 ```
 
+#### .catch()
+
+```js
+myTimeoutTask
+  .then(x => {
+    throw 'argh'
+  })
+  .then(x => 42)
+  .catch(err => "Cool, it's fine now.")
+  .fork(console.error, console.log)
+// logs: "Cool, it's fine now."
+```
+
 
 ### Static methods
 
