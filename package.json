@@ -10,7 +10,8 @@
     "prestart": "npm run clean-dist",
     "dev": "npm run prestart && webpack --env.dev --progress --color --watch",
     "build": "npm run prestart && webpack --env.prod",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "dev-server": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
@@ -46,6 +47,7 @@
     "chai": "^3.5.0",
     "mocha": "^3.0.2",
     "rimraf": "^2.5.4",
-    "webpack": "^2.2.1"
+    "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.3.0"
   }
 }

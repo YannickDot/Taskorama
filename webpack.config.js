@@ -1,14 +1,14 @@
 const {resolve, join} = require('path')
 const webpack = require('webpack')
 
-module.exports = env => {
+module.exports = (env = {}) => {
   const libraryName = 'taskorama'
   const addPlugin = (add, plugin) => add ? plugin : undefined
   const ifProd = plugin => addPlugin(env.prod, plugin)
   const ifDev = plugin => addPlugin(env.dev, plugin)
   const removeEmpty = array => array.filter(i => !!i)
 
-  return {
+  const config = {
     devtool: env.prod ? 'source-map' : 'eval',
     entry: {
       main: removeEmpty([
@@ -52,6 +52,8 @@ module.exports = env => {
     resolve: {
       extensions: ['.js', '.json']
     }
-
   }
+
+  if(!env.prod) config.entry['dev'] = removeEmpty(['./test/dev.js'])
+  return config
 }

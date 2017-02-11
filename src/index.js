@@ -2,7 +2,7 @@
 * @Author: Yannick Spark <yannickdot>
 * @Date:   2017-02-09T11:28:40+01:00
 * @Last modified by:   Yannick Spark
-* @Last modified time: 2017-02-11T15:20:42+01:00
+* @Last modified time: 2017-02-11T20:06:23+01:00
 */
 
 // @flow
@@ -122,7 +122,11 @@ Task.race = function(taskArray: Array<TaskInstance>): TaskInstance {
 Task.fromPromise = function(promise: Promise<any>): TaskInstance {
   return Task(function(resolve, reject) {
     promise.then(resolve, reject);
-    return { cancel: () => { throw "There is a promise is the task chain. A promise is not cancellable." } };
+    return {
+      cancel: () => {
+        throw "There is a promise is the task chain. A promise is not cancellable.";
+      }
+    };
   });
 };
 
