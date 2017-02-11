@@ -1,8 +1,8 @@
 /**
 * @Author: Yannick Spark <yannickdot>
 * @Date:   2017-02-09T11:28:40+01:00
-* @Last modified by:   yannicklevif
-* @Last modified time: 2017-02-11T00:59:19+01:00
+* @Last modified by:   Yannick Spark
+* @Last modified time: 2017-02-11T15:20:42+01:00
 */
 
 // @flow
@@ -122,7 +122,7 @@ Task.race = function(taskArray: Array<TaskInstance>): TaskInstance {
 Task.fromPromise = function(promise: Promise<any>): TaskInstance {
   return Task(function(resolve, reject) {
     promise.then(resolve, reject);
-    return { cancel: () => console.warn("A promise is not cancellable.") };
+    return { cancel: () => { throw "There is a promise is the task chain. A promise is not cancellable." } };
   });
 };
 
@@ -135,16 +135,16 @@ Task.wait = function(time: number, value: any): TaskInstance {
 
 function chain(cb): TaskInstance {
   const previousTask = this;
-  const chainedTask = Task(function(resolve, reject) {
+  return Task(function(resolve, reject) {
     let nextCancelCb;
     let previousCancel = previousTask.fork(reject, function(val) {
       try {
-        let nextVal = cb(val)
-        let nextTask
-        if(!nextVal) {
+        let nextVal = cb(val);
+        let nextTask;
+        if (!nextVal) {
           nextTask = Task.of(undefined);
         } else {
-          nextTask = nextVal
+          nextTask = nextVal;
         }
         let nextRunningTask = nextTask.fork(reject, resolve);
         nextCancelCb = nextRunningTask.cancel;
@@ -159,13 +159,12 @@ function chain(cb): TaskInstance {
     };
     return { cancel };
   });
-  return chainedTask;
 }
 
 function map(cb): TaskInstance {
   const previousTask = this;
-  const mappedTask = Task(function(resolve, reject) {
-    let previousRunningTask = previousTask.fork(reject, function(val) {
+  return Task(function(resolve, reject) {
+    return previousTask.fork(reject, function(val) {
       try {
         let nextValue = cb(val);
         resolve(nextValue);
@@ -173,15 +172,13 @@ function map(cb): TaskInstance {
         reject(e);
       }
     });
-    return previousRunningTask;
   });
-  return mappedTask;
 }
 
 function ap(taskFn): TaskInstance {
   const previousTask = this;
-  const appliedTask = Task(function(resolve, reject) {
-    let previousCancel = previousTask.fork(reject, function(val) {
+  return Task(function(resolve, reject) {
+    return previousTask.fork(reject, function(val) {
       try {
         taskFn.fork(reject, function(fn) {
           try {
@@ -195,20 +192,18 @@ function ap(taskFn): TaskInstance {
         reject(e);
       }
     });
-    return previousCancel;
   });
-  return appliedTask;
 }
 
 function then(cb): TaskInstance {
   const previousTask = this;
-  const thenTask = Task(function(resolve, reject) {
+  return Task(function(resolve, reject) {
     let nextCancelCb;
     let previousCancel = previousTask.fork(reject, function(val) {
       try {
-        let nextResult = cb(val)
+        let nextResult = cb(val);
         let nextTask;
-        if(!nextResult) {
+        if (!nextResult) {
           nextTask = Task.of(undefined);
         } else if (nextResult && nextResult._isTask) {
           nextTask = nextResult;
@@ -228,23 +223,23 @@ function then(cb): TaskInstance {
     };
     return { cancel };
   });
-  return thenTask;
 }
 
 function catchError(cb): TaskInstance {
   const previousTask = this;
-  const catchTask = Task(function(resolve, reject) {
-    let previousRunningTask = previousTask.fork(function (err) {
-      try {
-        let val = cb(err)
-        resolve(val)
-      } catch (e) {
-        reject(e)
-      }
-    }, resolve)
-    return previousRunningTask
+  return Task(function(resolve, reject) {
+    return previousTask.fork(
+      function(err) {
+        try {
+          let val = cb(err);
+          resolve(val);
+        } catch (e) {
+          reject(e);
+        }
+      },
+      resolve
+    );
   });
-  return catchTask;
 }
 
 function flip2(fn) {

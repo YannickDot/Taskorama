@@ -2,12 +2,12 @@
   "name": "taskorama",
   "version": "1.4.0",
   "description": "Taskorama",
-  "main": "main.js",
+  "main": "./main.js",
+  "browser": "./browser.js",
   "scripts": {
     "test": "mocha --reporter spec --compilers js:babel-core/register",
     "clean-dist": "rimraf dist",
     "prestart": "npm run clean-dist",
-    "start": "babel-node src/index.js",
     "dev": "npm run prestart && webpack --env.dev --progress --color --watch",
     "build": "npm run prestart && webpack --env.prod",
     "prepublish": "npm run build"
@@ -46,6 +46,6 @@
     "chai": "^3.5.0",
     "mocha": "^3.0.2",
     "rimraf": "^2.5.4",
-    "webpack": "^2.1.0-beta.20"
+    "webpack": "^2.2.1"
   }
 }
