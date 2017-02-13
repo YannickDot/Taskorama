@@ -2,7 +2,7 @@
 * @Author: Yannick Spark <yannickdot>
 * @Date:   2017-02-09T11:28:40+01:00
 * @Last modified by:   Yannick Spark
-* @Last modified time: 2017-02-11T20:06:23+01:00
+* @Last modified time: 2017-02-13T17:08:31+01:00
 */
 
 // @flow
@@ -37,9 +37,9 @@ export default function Task(subscribe: Subscription): TaskInstance {
     flatMap: chain,
     then: then,
     catch: catchError,
-    fork: flip2(subscribe),
+    fork: makeForkable(subscribe),
     run: function(cb) {
-      return subscribe(cb, console.error);
+      return this.fork(console.error, cb);
     }
   });
 }
@@ -246,10 +246,14 @@ function catchError(cb): TaskInstance {
   });
 }
 
-function flip2(fn) {
+function makeForkable(subscription) {
   return function(a, b) {
-    return fn(b, a);
+    var result = subscription(b, a);
+    if(!result || !result.cancel) return {cancel: no_cancel_handler}
+    return result
   };
 }
 
 function noop() {}
+
+function no_cancel_handler () { console.log('Error: Cannot cancel Task chain. One or more tasks in the chain has no cancellation handler.') }

@@ -1,5 +1,6 @@
 const {resolve, join} = require('path')
 const webpack = require('webpack')
+const CompressionPlugin = require("compression-webpack-plugin");
 
 module.exports = (env = {}) => {
   const libraryName = 'taskorama'
@@ -48,6 +49,7 @@ module.exports = (env = {}) => {
           warnings: false
         }
       })),
+      // new CompressionPlugin()
     ]),
     resolve: {
       extensions: ['.js', '.json']
