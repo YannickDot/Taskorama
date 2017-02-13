@@ -42,4 +42,4 @@ server.js
 
 dist/
 
-test/dev.js
+serve/dev.js
