@@ -38,7 +38,7 @@ myTimeoutExec.cancel()
 
 ```
 
-<p align="center">It's like Promises but cancellable 😄</p>
+<p align="center">It's like a Promise but <strong>deferrable</strong> and <strong>cancellable</strong> 🤗 </p>
 
 
 
@@ -94,6 +94,75 @@ runningTask.cancel() // --> 'cancelled !'
 
 ```
 
+
+## Migrating Promise-based code
+
+#### With Promises :
+
+```js
+let myPromise = new Promise(function(resolve, reject) {
+  setTimeout(resolve, 300)
+})
+
+myPromise
+  .then(_ => "Timeout done !")
+  .then(value => {
+    throw "oops!"
+  })
+  .then(_ => "There was an error up there. I won't be received.")
+  .catch(error => console.log(`Caught the error : ${error}`))
+  .then(_ => "Everything's fine now !")
+```
+
+#### With Tasks :
+
+```js
+// `Task` is the constructor
+let myTask = Task(function(resolve, reject) {
+  setTimeout(resolve, 300)
+})
+
+// It has the same semantics with `.then` and `.catch`
+myTask
+  .then(_ => "Timeout done !")
+  .then(value => {
+    throw "oops!"
+  })
+  .then(_ => "There was an error up there. I won't be received.")
+  .catch(error => console.log(`Caught the error : ${error}`))
+  .then(_ => "Everything's fine now !")
+
+// BUT ... the computation is deferred.
+// It must be ran using `.fork(errorCb, successCb)` or `.run(successCb)`.
+let myRunningTask = myTask.fork(
+  // No more `Unhandled rejection` errors. You're forced to handle error at the end of the chain.
+  (error) => console.log(`Got the error : ${error}`),
+  (finalResult) => console.log(`The final result is : ${finalResult}`)
+)
+
+// OR
+
+// `.run(cb)` is an alias for `.fork(console.error, cb)`
+let myRunningTask = myTask.run(finalResult => console.log(`The final result is : ${finalResult}`))
+```
+
+**BONUS**
+
+You may want to cancel the computation :
+```js
+let myTask = Task(function(resolve, reject) {
+  let timeoutHandler = setTimeout(resolve, 300)
+
+  // If you want it to be cancellable
+  let cancelTimeout = () => clearTimeout(timeoutHandler)
+  return { cancel: cancelTimeout }
+})
+
+/* ... */
+
+// Let's cancel it !
+myRunningTask.cancel()
+```
 
 ## API
 
@@ -199,6 +268,30 @@ task.fork(console.error, console.log)
 // logs error: 404
 ```
 
+#### Task.fetch(url)
+Creates a task that makes a request on the specified url.
+It resolves with a Response object.
+
+The `Response` object exposes the following readers at the moment :
+- `.json()`
+- `.text()`
+
+`Task.fetch` try to mimic the behavior of the [fetch API](https://developers.google.com/web/updates/2015/03/introduction-to-fetch)
+
+```js
+const url = 'https://jsonplaceholder.typicode.com/users'
+const requestTask = Task.fetch(url)
+  .then(response => response.json())
+
+const runningRequest = requestTask.fork(console.error, console.log)
+// logs: [Object, Object, ..., Object]
+```
+
+Any inflight request can be cancelled like this :
+```js
+runningRequest.cancel()
+```
+
 #### Task.wait
 Creates a task that completes after a certain duration (first argument).
 It resolves with the value passed as second argument.
@@ -278,7 +371,8 @@ I created this lib when I tried to implement Tasks in JavaScript in order to und
 
 I like using Promises but they have two major design flaws IMHO :
 
-- They are **async by default** : i.e. `Promise.resolve(2)` runs ***always*** on the next tick
+- They run as soon as the promise is declared : what if I want to defer the computation ?
+- They are **async by default** : i.e. `Promise.resolve(2)` ***always*** runs on the next tick
 - They are not cancellable (it's unfortunate that we can't cancel `window.fetch` http request when necessary)
 
 Tasks happen to be really simple and have richer semantics than Promises. So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
