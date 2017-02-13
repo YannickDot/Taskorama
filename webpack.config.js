@@ -56,6 +56,6 @@ module.exports = (env = {}) => {
     }
   }
 
-  if(!env.prod) config.entry['dev'] = removeEmpty(['./test/dev.js'])
+  if(!env.prod) config.entry['dev'] = removeEmpty(['./serve/dev.js'])
   return config
 }
