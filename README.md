@@ -12,6 +12,12 @@
 
 --
 
+Taskorama is an implementation of the Task data type. It can be used to express concurrent, asynchronous and cancellable computations. 
+
+The semantics is pretty close to the ones provided by Promises but it has many subtle differencies explained in the [Rationale](#Rationale) section.
+
+Here is an example of how you can use them :
+
 ```js
 import Task from 'taskorama'
 
@@ -39,7 +45,6 @@ myTimeoutExec.cancel()
 ```
 
 <p align="center">It's like a Promise but <strong>deferrable</strong> and <strong>cancellable</strong> 🤗 </p>
-
 
 
 ## Install
@@ -365,7 +370,7 @@ taskFromPromise.fork(console.error, console.log)
 
 _You can still have a look at the [tonic-example.js](./tonic-example.js) file_
 
-## Rationale
+# Rationale
 
 I created this lib when I tried to implement Tasks in JavaScript in order to understand how do they work.
 
