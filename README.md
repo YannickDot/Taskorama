@@ -14,7 +14,7 @@
 
 Taskorama is an implementation of the Task data type. It can be used to express concurrent, asynchronous and cancellable computations. 
 
-The semantics is pretty close to the ones provided by Promises but it has many subtle differencies explained in the [Rationale](#Rationale) section.
+The semantics is pretty close to the ones provided by Promises but it has many subtle differencies explained in the [Rationale](#rationale) section.
 
 Here is an example of how you can use them :
 
