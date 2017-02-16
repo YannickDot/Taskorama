@@ -374,7 +374,7 @@ _You can still have a look at the [tonic-example.js](./tonic-example.js) file_
 
 I created this lib when I tried to implement Tasks in JavaScript in order to understand how do they work.
 
-I like using Promises but they have two major design flaws IMHO :
+I like using Promises but they have major design flaws IMHO :
 
 - They run as soon as the promise is declared : what if I want to defer the computation ?
 - They are **async by default** : i.e. `Promise.resolve(2)` ***always*** runs on the next tick
