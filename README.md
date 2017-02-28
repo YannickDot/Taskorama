@@ -1,9 +1,9 @@
 <p align="center">
   
   <p align="center">
-   <br>
+   <br/>
    <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="180" height="180" alt="Taskorama">
-   <br>
+   <br/>
   </p>
   <h1 align="center">Taskorama</h1>
   <p align="center">
@@ -15,8 +15,8 @@
 
 </p>
 
-
---
+<br/>
+<br/>
 
 Taskorama is an implementation of the Task data type. It can be used to express concurrent, asynchronous and cancellable computations. 
 
