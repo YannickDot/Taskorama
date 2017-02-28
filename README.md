@@ -1,12 +1,11 @@
 <p align="center">
-  <h1 align="center">Taskorama</h1>
   
   <p align="center">
    <br>
-   <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="128" height="128" alt="Taskorama">
+   <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="180" height="180" alt="Taskorama">
    <br>
   </p>
-
+  <h1 align="center">Taskorama</h1>
   <p align="center">
     <b align="center">Taskorama is a tiny functional task data type library for JavaScript (~1.4Kb Gzipped!)</b>
   </p>
