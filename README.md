@@ -7,7 +7,7 @@
   </p>
   <h1 align="center">Taskorama</h1>
   <p align="center">
-    <b align="center">Taskorama is a tiny functional task data type library for JavaScript (~1.4Kb Gzipped!)</b>
+    <b align="center">Taskorama is a tiny Task data type for JavaScript (~1.4Kb)</b>
   </p>
   <p align="center">
     <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
@@ -18,7 +18,8 @@
 <br/>
 <br/>
 
-Taskorama is an implementation of the Task data type. It can be used to express concurrent, asynchronous and cancellable computations. 
+Taskorama is an implementation of the Task data type. 
+It is used to express **concurrent**, **asynchronous** and **cancellable computations** using **functional programming** constructs.
 
 The semantics is pretty close to the ones provided by Promises but it has many subtle differencies explained in the [Rationale](#rationale) section.
 
@@ -106,7 +107,7 @@ runningTask.cancel() // --> 'cancelled !'
 ```
 
 
-## Migrating Promise-based code
+## Migrating some Promise-based code to Taskorama
 
 #### With Promises :
 
@@ -144,7 +145,7 @@ myTask
   .then(_ => "Everything's fine now !")
 
 // BUT ... the computation is deferred.
-// It must be ran using `.fork(errorCb, successCb)` or `.run(successCb)`.
+// It must be run using `.fork(errorCb, successCb)` or `.run(successCb)`.
 let myRunningTask = myTask.fork(
   // No more `Unhandled rejection` errors. You're forced to handle error at the end of the chain.
   (error) => console.log(`Got the error : ${error}`),
