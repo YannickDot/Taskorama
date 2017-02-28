@@ -11,7 +11,7 @@
     "dev": "npm run prestart && webpack --env.dev --progress --color --watch",
     "build": "npm run prestart && webpack --env.prod",
     "prepublish": "npm run build",
-    "dev-server": "webpack-dev-server"
+    "dev-server": "webpack-dev-server --env.devServer"
   },
   "repository": {
     "type": "git",

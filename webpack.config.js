@@ -1,8 +1,10 @@
 const {resolve, join} = require('path')
 const webpack = require('webpack')
-const CompressionPlugin = require("compression-webpack-plugin");
+const CompressionPlugin = require('compression-webpack-plugin')
 
 module.exports = (env = {}) => {
+
+  console.log('env : ', env)
   const libraryName = 'taskorama'
   const addPlugin = (add, plugin) => add ? plugin : undefined
   const ifProd = plugin => addPlugin(env.prod, plugin)
@@ -12,15 +14,8 @@ module.exports = (env = {}) => {
   const config = {
     devtool: env.prod ? 'source-map' : 'eval',
     entry: {
-      main: removeEmpty([
-        './src/index.js',
-      ]),
-      browser: removeEmpty([
-        './src/browser.js',
-      ]),
-      // server: removeEmpty([
-      //   './src/server.js',
-      // ])
+      main: removeEmpty(['./src/index.js']),
+      browser: removeEmpty(['./src/browser.js'])
     },
     context: resolve(__dirname, ''),
     output: {
@@ -33,14 +28,14 @@ module.exports = (env = {}) => {
     },
     module: {
       loaders: [
-        { test: /\.js$/, loaders: ['babel-loader'], exclude: /node_modules/ },
-        { test: /\.json$/, loaders: ["json-loader"], exclude: /node_modules/},
+        {test: /\.js$/, loaders: ['babel-loader'], exclude: /node_modules/},
+        {test: /\.json$/, loaders: ['json-loader'], exclude: /node_modules/}
       ]
     },
     plugins: removeEmpty([
       ifProd(new webpack.LoaderOptionsPlugin({
-         minimize : true,
-         debug: false
+        minimize: true,
+        debug: false
       })),
       ifProd(new webpack.optimize.UglifyJsPlugin({
         mangle: true,
@@ -49,13 +44,13 @@ module.exports = (env = {}) => {
           warnings: false
         }
       })),
-      // new CompressionPlugin()
+      new CompressionPlugin()
     ]),
     resolve: {
       extensions: ['.js', '.json']
     }
   }
 
-  if(!env.prod) config.entry['dev'] = removeEmpty(['./serve/dev.js'])
+  if (env.devServer) config.entry['dev'] = removeEmpty(['./serve/dev.js'])
   return config
 }

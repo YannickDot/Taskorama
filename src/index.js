@@ -249,8 +249,8 @@ function catchError (cb): TaskInstance {
 }
 
 function makeForkable (subscription) {
-  return function (a, b) {
-    var result = subscription(b, a)
+  return function forkable (rej, res) {
+    var result = subscription(res, rej) // flipping arguments
     if (!result || !result.cancel) return {cancel: noCancelHandler}
     return result
   }

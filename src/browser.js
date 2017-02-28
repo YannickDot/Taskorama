@@ -6,38 +6,34 @@
 */
 
 // @flow
+import type {TaskInstance} from './index.js'
+import Task from './index.js'
 
-import type { TaskInstance } from "./index.js";
-
-import Task from "./index.js";
-
-Task.fetch = function(url: string): TaskInstance {
-  return Task(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("get", url, true);
-    xhr.onerror = reject;
-    xhr.onreadystatechange = function() {
-      var status, data;
-      if (xhr.readyState == 4) {
-        status = xhr.status;
-        if (status == 200) {
-          resolve({
-            json: () => JSON.parse(xhr.responseText),
-            text: () => xhr.responseText,
-            xhr: xhr,
-            status: status,
-            url: url
-          });
-        } else {
-          reject(status);
-        }
+Task.fetch = function (url: string, options: any = {}): TaskInstance {
+  return Task(function (resolve, reject) {
+    var xhr = new XMLHttpRequest()
+    xhr.open(options.method || 'get', url, true)
+    xhr.onerror = reject
+    xhr.onload = () => {
+      if (xhr.status == 200) {
+        resolve({
+          json: () => JSON.parse(xhr.responseText),
+          text: () => xhr.responseText,
+          xml: () => xhr.responseXML,
+          blob: () => new Blob([xhr.response]),
+          xhr: xhr,
+          statusText: xhr.statusText,
+          status: xhr.status,
+          url: xhr.responseURL
+        })
+      } else {
+        reject(status)
       }
-    };
-    xhr.send();
+    }
+    xhr.send()
 
-    let cancel = () => xhr.abort();
-    return { cancel };
-  });
-};
+    return {cancel: () => xhr.abort()}
+  })
+}
 
 export default Task
