@@ -112,10 +112,72 @@ Task.race = function (taskArray: Array<TaskInstance>): TaskInstance {
       if (exceptId === null) {
         executions.forEach(e => e.cancel())
       } else {
-        executions.filter((e, i) => i !== exceptId).forEach(e => e.cancel())
+        executions
+          .filter((e, index) => index !== exceptId)
+          .forEach(e => e.cancel())
       }
     }
     return {cancel}
+  })
+}
+
+
+Task.sequence = function (taskArray: Array<TaskInstance>): TaskInstance {
+  let currentTask = 1
+
+  return Task(function(resolve, reject) {
+    const results = []
+    const [fst, ...rest] = taskArray
+    const sequenceTask = rest.reduce((prevTask, nextTask) => {
+      return prevTask.then(val => {
+        currentTask++
+        results.push(val)
+        return nextTask
+      })
+    }, fst)
+    .then(val => { // Don't forget the last one :-)
+      currentTask++
+      results.push(val)
+      return results
+    })
+    return sequenceTask.fork(reject, resolve)
+  })
+  .catch(err => {
+    console.error(`Caught error in task sequence - currentTask #${currentTask}: `, err)
+    return {
+      msg: `Caught error in task sequence - currentTask #${currentTask}`,
+      error: err
+    }
+  })
+
+}
+
+
+Task.parallel = function (taskArray: Array<TaskInstance>): TaskInstance {
+  let remainingTasks = taskArray.length
+
+  return Task(function(resolve, reject) {
+    const results = []
+    const [fst, ...rest] = taskArray
+    const parallellizedTasks = taskArray.map(task => {
+      return task.fork(
+        reject,
+        val => {
+          results.push(val)
+          remainingTasks--
+          if(remainingTasks === 0) resolve(results)
+        }
+      )
+    })
+    const cancel = () => parallellizedTasks.forEach(e => e.cancel())
+    return {cancel}
+  })
+  .catch(err => {
+    console.error(`Caught error in parallel tasks set: `, err)
+    return {
+      msg: `Caught error in parallel tasks set`,
+      error: err
+    }
   })
 }
 

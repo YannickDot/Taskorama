@@ -7,7 +7,7 @@
   </p>
   <h1 align="center">Taskorama</h1>
   <p align="center">
-    <b align="center">Taskorama is a tiny Task data type for JavaScript (~1.4Kb)</b>
+    <b align="center">Taskorama is a tiny Task data type for JavaScript (~1.6Kb)</b>
   </p>
   <p align="center">
     <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
@@ -358,6 +358,44 @@ const tasksRace = Task.race(taskArray)
 
 tasksRace.fork(console.error, console.log)
 // logs: 'three' - after 1s
+```
+
+#### Task.sequence
+Creates a task from an array of tasks, and run them in order.
+It resolves with an array containing the results of the execution of every task in the array in their initial order.
+
+If it is cancelled, it cancels all the tasks in the array as well.
+
+```js
+const taskArray = [
+  Task.wait(2000,`one`),
+  Task.wait(3000,`two`),
+  Task.wait(1000,`three`)
+]
+
+const tasksSequence = Task.sequence(taskArray)
+
+tasksSequence.fork(console.error, console.log)
+// logs: ['one', 'two', 'three'] - after 6s
+```
+
+#### Task.parallel
+Creates a task from an array of tasks, and run them concurrently.
+It resolves with an array containing the results of the execution of every task in the array in their order of completion.
+
+If it is cancelled, it cancels all the tasks in the array as well.
+
+```js
+const taskArray = [
+  Task.wait(2000,`one`),
+  Task.wait(3000,`two`),
+  Task.wait(1000,`three`)
+]
+
+const tasksParallel = Task.parallel(taskArray)
+
+tasksParallel.fork(console.error, console.log)
+// logs: ['three', 'one', 'two'] - after 3s
 ```
 
 #### Task.fromPromise
