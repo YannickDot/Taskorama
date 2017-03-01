@@ -1,5 +1,5 @@
 <p align="center">
-  
+
   <p align="center">
    <br/>
    <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="180" height="180" alt="Taskorama">
@@ -18,7 +18,7 @@
 <br/>
 <br/>
 
-Taskorama is an implementation of the Task data type. 
+Taskorama is an implementation of the Task data type.
 It is used to express **concurrent**, **asynchronous** and **cancellable computations** using **functional programming** constructs.
 
 The semantics is pretty close to the ones provided by Promises but it has many subtle differencies explained in the [Rationale](#rationale) section.
@@ -335,7 +335,6 @@ const taskArray = [
   Task.wait(4000,`four`),
 ]
 
-const startTime = Date.now()
 const tasksAll = Task.all(taskArray)
 
 tasksAll.fork(console.error, console.log)
@@ -355,7 +354,6 @@ const taskArray = [
   Task.wait(4000,`four`),
 ]
 
-const startTime = Date.now()
 const tasksRace = Task.race(taskArray)
 
 tasksRace.fork(console.error, console.log)
