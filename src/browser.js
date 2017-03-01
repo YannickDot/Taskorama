@@ -24,7 +24,7 @@ Task.fetch = function (url: string, options: any = {}): TaskInstance {
           xhr: xhr,
           statusText: xhr.statusText,
           status: xhr.status,
-          url: xhr.responseURL
+          url: url
         })
       } else {
         reject(status)
