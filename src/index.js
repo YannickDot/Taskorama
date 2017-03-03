@@ -11,12 +11,15 @@ export type callback = (value: any) => any | void | null;
 
 export type effectCallback = (value: any) => ?void;
 
-export type Subscription = (resolve: callback, reject: callback) => RunningTask;
+export type TaskDescription = (
+  resolve: callback,
+  reject: callback
+) => TaskExecution;
 
 export type TaskInstance = {
   _isTask: boolean,
-  fork: (reject: effectCallback, resolve: effectCallback) => RunningTask,
-  run: (resolve: effectCallback) => RunningTask,
+  fork: (reject: effectCallback, resolve: effectCallback) => TaskExecution,
+  run: (resolve: effectCallback) => TaskExecution,
   map: (cb: callback) => TaskInstance,
   flatMap: (cb: callback) => TaskInstance,
   chain: (cb: callback) => TaskInstance,
@@ -24,11 +27,11 @@ export type TaskInstance = {
   catch: (cb: callback) => TaskInstance
 };
 
-export type RunningTask = {
+export type TaskExecution = {
   cancel: effectCallback
 };
 
-export default function Task (subscribe: Subscription): TaskInstance {
+export default function Task (subscribe: TaskDescription): TaskInstance {
   return Object.freeze({
     _isTask: true,
     map: map,
@@ -37,9 +40,12 @@ export default function Task (subscribe: Subscription): TaskInstance {
     flatMap: chain,
     then: then,
     catch: catchError,
+    clone: clone,
+    repeat: repeat,
+    retry: retry,
     fork: makeForkable(subscribe),
     run: function (cb) {
-      return this.fork(console.error, cb)
+      return this.fork(x => console.log('rejected:', x), cb)
     }
   })
 }
@@ -64,31 +70,34 @@ Task.resolve = Task.of
 Task.all = function (taskArray: Array<TaskInstance>): TaskInstance {
   return Task(function (resolve, reject) {
     const numberOfTasks = taskArray.length
+    let remainingTasks = taskArray.length
     let results = {}
     let keys = []
-    const notify = index => value => {
-      results[`t-${index}`] = value
-      const tasksFinishedCount = keys.filter(k => !!results[k]).length
-      if (tasksFinishedCount === numberOfTasks) {
-        // All tasks are done so resolve the array of results
-        let resultsArr = keys.map(k => results[k])
-        resolve(resultsArr)
-      }
-    }
-    const notifyError = index => error => {
-      cancel(index)
-      reject(error)
-    }
-    let executions = taskArray.map((task, index) => {
+    const allExecutions = taskArray.map((task, index) => {
       results[`t-${index}`] = undefined
       keys = Object.keys(results)
       return task.fork(notifyError(index), notify(index))
     })
+
+    const notify = index => value => {
+      results[`t-${index}`] = value
+      remainingTasks--
+      if (remainingTasks === 0) {
+        let resultsArr = keys.map(k => results[k])
+        resolve(resultsArr)
+      }
+    }
+
+    const notifyError = index => error => {
+      cancel(index)
+      reject(error, index)
+    }
+
     const cancel = (exceptId = null) => {
       if (exceptId === null) {
-        executions.forEach(e => e.cancel())
+        allExecutions.forEach(e => e.cancel())
       } else {
-        executions.filter((e, i) => i !== exceptId).forEach(e => e.cancel())
+        allExecutions.filter((e, i) => i !== exceptId).forEach(e => e.cancel())
       }
     }
     return {cancel}
@@ -103,7 +112,7 @@ Task.race = function (taskArray: Array<TaskInstance>): TaskInstance {
     }
     const notifyError = index => error => {
       cancel(index)
-      reject(error)
+      reject(error, index)
     }
     let executions = taskArray.map((task, index) => {
       return task.fork(notifyError(index), notify(index))
@@ -121,63 +130,60 @@ Task.race = function (taskArray: Array<TaskInstance>): TaskInstance {
   })
 }
 
-
 Task.sequence = function (taskArray: Array<TaskInstance>): TaskInstance {
-  let currentTask = 1
-
-  return Task(function(resolve, reject) {
+  return Task(function (resolve, reject) {
     const results = []
-    const [fst, ...rest] = taskArray
-    const sequenceTask = rest.reduce((prevTask, nextTask) => {
-      return prevTask.then(val => {
-        currentTask++
-        results.push(val)
-        return nextTask
+    const numberOfTasks = taskArray.length
+    const [fst, ...rest] = taskArray.map((task, index) => {
+      return task.catch(err => {
+        console.error(
+          `Caught error in task sequence - currentTask #${index}: `,
+          err
+        )
+        return {err, index: index}
       })
-    }, fst)
-    .then(val => { // Don't forget the last one :-)
-      currentTask++
-      results.push(val)
-      return results
     })
+    const sequenceTask = rest
+      .reduce(
+        (prevTask, nextTask, index) => {
+          return prevTask.then(val => {
+            results.push(val)
+            return nextTask
+          })
+        },
+        fst
+      )
+      .then(val => {
+        // Don't forget the last one :-)
+        results.push(val)
+        return results
+      })
     return sequenceTask.fork(reject, resolve)
   })
-  .catch(err => {
-    console.error(`Caught error in task sequence - currentTask #${currentTask}: `, err)
-    return {
-      msg: `Caught error in task sequence - currentTask #${currentTask}`,
-      error: err
-    }
-  })
-
 }
 
-
 Task.parallel = function (taskArray: Array<TaskInstance>): TaskInstance {
-  let remainingTasks = taskArray.length
-
-  return Task(function(resolve, reject) {
-    const results = []
+  return Task(function (resolve, reject) {
+    let remainingTasks = taskArray.length
+    let results = []
     const [fst, ...rest] = taskArray
-    const parallellizedTasks = taskArray.map(task => {
-      return task.fork(
-        reject,
-        val => {
+    const parallellizedTasks = taskArray.map((task, index) => {
+      return task
+        .catch(err => {
+          console.error(
+            `Caught error in parallel tasks set - currentTask #${index}: `,
+            err
+          )
+          return {err, index: index}
+        })
+        .fork(reject, val => {
           results.push(val)
           remainingTasks--
-          if(remainingTasks === 0) resolve(results)
-        }
-      )
+          if (remainingTasks === 0) resolve(results)
+        })
     })
     const cancel = () => parallellizedTasks.forEach(e => e.cancel())
     return {cancel}
-  })
-  .catch(err => {
-    console.error(`Caught error in parallel tasks set: `, err)
-    return {
-      msg: `Caught error in parallel tasks set`,
-      error: err
-    }
   })
 }
 
@@ -296,17 +302,63 @@ function then (cb): TaskInstance {
 function catchError (cb): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
-    return previousTask.fork(
+    let nextCancelCb
+    let previousCancel = previousTask.fork(
       function (err) {
         try {
-          let val = cb(err)
-          resolve(val)
+          let nextResult = cb(err)
+          let nextTask
+          if (!nextResult) {
+            nextTask = Task.of(undefined)
+          } else if (nextResult && nextResult._isTask) {
+            nextTask = nextResult
+          } else {
+            nextTask = Task.of(nextResult)
+          }
+          let nextCancel = nextTask.fork(reject, resolve)
+          nextCancelCb = nextCancel.cancel
+          return {cancel: nextCancel.cancel}
         } catch (e) {
           reject(e)
         }
       },
       resolve
     )
+
+    let cancel = () => {
+      if (nextCancelCb) nextCancelCb()
+      previousCancel.cancel()
+    }
+    return {cancel}
+  })
+}
+
+function clone (): TaskInstance {
+  const previousTask = this
+  return Task(function (resolve, reject) {
+    return previousTask.fork(reject, resolve)
+  })
+}
+
+function repeat (times: number = 2): TaskInstance {
+  const previousTask = this
+  const taskArray = Array.from(Array(times).keys())
+    .map(_ => previousTask.clone())
+  return Task.sequence(taskArray)
+}
+
+function retry (times: number = 2) {
+  const previousTask = this
+  return Task(function (resolve, reject) {
+    let fallbackTask = previousTask
+    let retryiedTask = previousTask
+    for (let i = 0; i < times; i++) {
+      retryiedTask = retryiedTask.catch(err => {
+        console.log(err)
+        return fallbackTask
+      })
+    }
+    return previousTask.fork(reject, resolve)
   })
 }
 
