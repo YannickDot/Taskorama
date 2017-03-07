@@ -7,7 +7,7 @@
   </p>
   <h1 align="center">Taskorama</h1>
   <p align="center">
-    <b align="center">Taskorama is a tiny Task data type for JavaScript (~1.6Kb)</b>
+    <b align="center">Taskorama is a tiny Task data type for JavaScript (~1.7Kb gzipped)</b>
   </p>
   <p align="center">
     <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
@@ -197,7 +197,8 @@ const myTimeoutTask = Task(function (resolve, reject) {
 #### .fork(errorEffect, successEffect)
 
 ```js
-myTimeoutTask.fork(console.error, console.log)
+myTimeoutTask
+  .fork(console.error, console.log)
 // logs : 42
 ```
 
@@ -205,26 +206,30 @@ myTimeoutTask.fork(console.error, console.log)
 `.run(myCb)` is an alias for `.fork(console.error, myCb)`
 
 ```js
-myTimeoutTask.run(console.log)
+myTimeoutTask
+  .run(console.log)
 // logs : 42
 ```
 
 #### .map()
 
 ```js
-myTimeoutTask.map(x => x * 2).fork(console.error, console.log)
+myTimeoutTask
+  .map(x => x * 2)
+  .fork(console.error, console.log)
 // logs : 84
 ```
 
-<!--
+
 #### .ap()
 
 ```js
-const taskToApply = Task.of(x => x * 2)
-myTimeoutTask.ap(taskToApply).run(console.log)
+Task.of(x => x * 2)
+  .ap(Task.of(42))
+  .fork(console.error, console.log)
 // logs: 84
 ```
--->
+
 
 #### .chain() / .flatMap()
 
@@ -279,6 +284,34 @@ const task = Task.reject(404)
 task.fork(console.error, console.log)
 // logs error: 404
 ```
+
+<!--
+### Task.do(* generatorFn)
+Using JavaScript's generators to introduce a synchronous-looking syntax for chaining Tasks.
+This is inspired by Async/Await for Promises and Haskell's do notation for Monads.
+
+
+```js
+const fetchJSON = url => Task.fetch(url).then(r => r.json())
+
+const program = Task.do(function *() {
+  const posts = yield fetchJSON('/posts')
+  const users = yield fetchJSON('/users')
+  yield Task.wait(2000) // Lets pause for 2 sec.
+  const todos = yield fetchJSON('/todos')
+
+  return {posts, users, todos}
+})
+
+program
+  .fork(console.error, console.log)
+
+// logs: { posts: [...],  users: [...],  todos: [...] }
+
+```
+
+-->
+
 
 #### Task.fetch(url)
 Creates a task that makes a request on the specified url.
@@ -337,7 +370,8 @@ const taskArray = [
 
 const tasksAll = Task.all(taskArray)
 
-tasksAll.fork(console.error, console.log)
+tasksAll
+  .fork(console.error, console.log)
 // logs: ['one', 'two', 'three', 'four'] - after 4s
 ```
 
@@ -356,7 +390,8 @@ const taskArray = [
 
 const tasksRace = Task.race(taskArray)
 
-tasksRace.fork(console.error, console.log)
+tasksRace
+  .fork(console.error, console.log)
 // logs: 'three' - after 1s
 ```
 
@@ -375,7 +410,8 @@ const taskArray = [
 
 const tasksSequence = Task.sequence(taskArray)
 
-tasksSequence.fork(console.error, console.log)
+tasksSequence
+  .fork(console.error, console.log)
 // logs: ['one', 'two', 'three'] - after 6s
 ```
 
@@ -394,7 +430,8 @@ const taskArray = [
 
 const tasksParallel = Task.parallel(taskArray)
 
-tasksParallel.fork(console.error, console.log)
+tasksParallel
+  .fork(console.error, console.log)
 // logs: ['three', 'one', 'two'] - after 3s
 ```
 
@@ -406,7 +443,8 @@ Such a task cannot be cancelled because a Promise is not cancellable.
 const p = Promise.resolve(2)
 const taskFromPromise = Task.fromPromise(p)
 
-taskFromPromise.fork(console.error, console.log)
+taskFromPromise
+  .fork(console.error, console.log)
 // logs: 2
 ```
 
@@ -427,4 +465,4 @@ Tasks happen to be really simple and have richer semantics than Promises. So I d
 
 I started this project after watching [this talk](https://www.youtube.com/watch?v=uQ1zhJHclvs) about Observables.
 
-The internals of taskorama are close to the case explained in this video.
+The internals of Taskorama are similar to the one used in case explained in this video.

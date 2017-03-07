@@ -58,15 +58,6 @@ const execTaskFromPromise = taskFromPromise.run(
 )
 
 
-// .ap()
-const taskToApply = Task.of(x => x.toUpperCase())
-const taskInput = Task.of('hEy Ho, leTs gO')
-const taskApplied = taskInput.ap(taskToApply)
-const execTaskApplied = taskApplied.run(
-  (x) => console.log(`Ap : Task applied with .ap() -> ${x}`)
-)
-
-
 // Cancelling a task
 const timeoutTask = Task.wait(10000, "I'm done !")
 const canceller = Task.wait(3000, "I cancelled it !")

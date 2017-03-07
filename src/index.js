@@ -39,6 +39,7 @@ export default function Task (subscribe: TaskDescription): TaskInstance {
     chain: chain,
     flatMap: chain,
     then: then,
+    bind: then,
     catch: catchError,
     clone: clone,
     repeat: repeat,
@@ -58,6 +59,19 @@ Task.of = function (value: any): TaskInstance {
   })
 }
 
+Task.do = function doT (genFn) {
+  let gen = genFn()
+  const nextVal = (value) => {
+    var result = gen.next(value)
+    if (result.done) return result.value
+    if (result.value && result.value._isTask) {
+      return result.value.then(nextVal)
+    }
+    return Task.of(result.value).then(nextVal)
+  }
+  return nextVal()
+}
+
 Task.reject = function (value: any): TaskInstance {
   return Task(function (resolve, reject) {
     reject(value)
@@ -69,15 +83,9 @@ Task.resolve = Task.of
 
 Task.all = function (taskArray: Array<TaskInstance>): TaskInstance {
   return Task(function (resolve, reject) {
-    const numberOfTasks = taskArray.length
     let remainingTasks = taskArray.length
     let results = {}
     let keys = []
-    const allExecutions = taskArray.map((task, index) => {
-      results[`t-${index}`] = undefined
-      keys = Object.keys(results)
-      return task.fork(notifyError(index), notify(index))
-    })
 
     const notify = index => value => {
       results[`t-${index}`] = value
@@ -92,6 +100,12 @@ Task.all = function (taskArray: Array<TaskInstance>): TaskInstance {
       cancel(index)
       reject(error, index)
     }
+
+    const allExecutions = taskArray.map((task, index) => {
+      results[`t-${index}`] = undefined
+      keys = Object.keys(results)
+      return task.fork(notifyError(index), notify(index))
+    })
 
     const cancel = (exceptId = null) => {
       if (exceptId === null) {
@@ -133,7 +147,6 @@ Task.race = function (taskArray: Array<TaskInstance>): TaskInstance {
 Task.sequence = function (taskArray: Array<TaskInstance>): TaskInstance {
   return Task(function (resolve, reject) {
     const results = []
-    const numberOfTasks = taskArray.length
     const [fst, ...rest] = taskArray.map((task, index) => {
       return task.catch(err => {
         console.error(
@@ -166,7 +179,6 @@ Task.parallel = function (taskArray: Array<TaskInstance>): TaskInstance {
   return Task(function (resolve, reject) {
     let remainingTasks = taskArray.length
     let results = []
-    const [fst, ...rest] = taskArray
     const parallellizedTasks = taskArray.map((task, index) => {
       return task
         .catch(err => {
@@ -249,12 +261,12 @@ function map (cb): TaskInstance {
   })
 }
 
-function ap (taskFn): TaskInstance {
+function ap (taskToApply): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
-    return previousTask.fork(reject, function (val) {
+    return previousTask.fork(reject, function (fn) {
       try {
-        taskFn.fork(reject, function (fn) {
+        taskToApply.fork(reject, function (val) {
           try {
             let nextValue = fn(val)
             resolve(nextValue)
