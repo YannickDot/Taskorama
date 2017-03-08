@@ -285,7 +285,6 @@ task.fork(console.error, console.log)
 // logs error: 404
 ```
 
-<!--
 ### Task.do(* generatorFn)
 Using JavaScript's generators to introduce a synchronous-looking syntax for chaining Tasks.
 This is inspired by Async/Await for Promises and Haskell's do notation for Monads.
@@ -294,23 +293,22 @@ This is inspired by Async/Await for Promises and Haskell's do notation for Monad
 ```js
 const fetchJSON = url => Task.fetch(url).then(r => r.json())
 
-const program = Task.do(function *() {
+const main = Task.do(function *() {
   const posts = yield fetchJSON('/posts')
   const users = yield fetchJSON('/users')
+
   yield Task.wait(2000) // Lets pause for 2 sec.
-  const todos = yield fetchJSON('/todos')
 
-  return {posts, users, todos}
+  return {posts, users}
 })
+// -> 'main' is a Task
 
-program
+main
   .fork(console.error, console.log)
 
-// logs: { posts: [...],  users: [...],  todos: [...] }
+// -> logs: { posts: [...],  users: [...] }
 
 ```
-
--->
 
 
 #### Task.fetch(url)

@@ -60,6 +60,7 @@ Task.of = function (value: any): TaskInstance {
 }
 
 Task.do = function doT (genFn) {
+  if(!isGeneratorFunction(genFn)) throw Error('Task.do expects a generator function.')
   let gen = genFn()
   const nextVal = (value) => {
     var result = gen.next(value)
@@ -388,4 +389,15 @@ function noCancelHandler () {
   console.log(
     'Error: Cannot cancel Task chain. One or more tasks in the chain has no cancellation handler.'
   )
+}
+
+function isGeneratorFunction(obj) {
+   var constructor = obj.constructor;
+   if (!constructor) return false;
+   if ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName) return true;
+   return isGenerator(constructor.prototype);
+}
+
+function isGenerator(obj) {
+  return 'function' == typeof obj.next && 'function' == typeof obj.throw;
 }
