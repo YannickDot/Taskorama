@@ -291,7 +291,7 @@ task.fork(console.error, console.log)
 // logs error: 404
 ```
 
-### Task.do(* generatorFn)
+#### Task.do(* generatorFn)
 Using JavaScript's generators to introduce a synchronous-looking syntax for chaining Tasks.
 This is inspired by Async/Await for Promises and Haskell's do notation for Monads.
 
