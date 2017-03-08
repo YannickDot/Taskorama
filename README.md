@@ -66,6 +66,12 @@ or
 > yarn add taskorama
 ```
 
+or CDN
+
+```
+https://unpkg.com/taskorama
+```
+
 ## Usage
 
 ### Creating a Task
