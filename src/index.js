@@ -11,10 +11,15 @@ export type callback = (value: any) => any | void | null;
 
 export type effectCallback = (value: any) => ?void;
 
-export type TaskDescription = (
-  resolve: callback,
-  reject: callback
-) => TaskExecution;
+export type TaskExecution = {
+  _isExecution: boolean,
+  cancel: effectCallback,
+  inspect: (value: any) => {status: string, value: any}
+};
+
+export type TaskDescription = (resolve: callback, reject: callback) => {
+  cancel: effectCallback
+};
 
 export type TaskInstance = {
   _isTask: boolean,
@@ -25,10 +30,6 @@ export type TaskInstance = {
   chain: (cb: callback) => TaskInstance,
   then: (cb: callback) => TaskInstance,
   catch: (cb: callback) => TaskInstance
-};
-
-export type TaskExecution = {
-  cancel: effectCallback
 };
 
 export default function Task (subscribe: TaskDescription): TaskInstance {
@@ -60,9 +61,11 @@ Task.of = function (value: any): TaskInstance {
 }
 
 Task.do = function doT (genFn) {
-  if(!isGeneratorFunction(genFn)) throw Error('Task.do expects a generator function.')
+  if (!isGeneratorFunction(genFn)) {
+    throw Error('Task.do expects a generator function.')
+  }
   let gen = genFn()
-  const nextVal = (value) => {
+  const nextVal = value => {
     var result = gen.next(value)
     if (result.done) return result.value
     if (result.value && result.value._isTask) {
@@ -88,19 +91,21 @@ Task.all = function (taskArray: Array<TaskInstance>): TaskInstance {
     let results = {}
     let keys = []
 
-    const notify = index => value => {
-      results[`t-${index}`] = value
-      remainingTasks--
-      if (remainingTasks === 0) {
-        let resultsArr = keys.map(k => results[k])
-        resolve(resultsArr)
+    const notify = index =>
+      value => {
+        results[`t-${index}`] = value
+        remainingTasks--
+        if (remainingTasks === 0) {
+          let resultsArr = keys.map(k => results[k])
+          resolve(resultsArr)
+        }
       }
-    }
 
-    const notifyError = index => error => {
-      cancel(index)
-      reject(error, index)
-    }
+    const notifyError = index =>
+      error => {
+        cancel(index)
+        reject(error, index)
+      }
 
     const allExecutions = taskArray.map((task, index) => {
       results[`t-${index}`] = undefined
@@ -121,14 +126,16 @@ Task.all = function (taskArray: Array<TaskInstance>): TaskInstance {
 
 Task.race = function (taskArray: Array<TaskInstance>): TaskInstance {
   return Task(function (resolve, reject) {
-    const notify = index => value => {
-      cancel(index)
-      resolve(value)
-    }
-    const notifyError = index => error => {
-      cancel(index)
-      reject(error, index)
-    }
+    const notify = index =>
+      value => {
+        cancel(index)
+        resolve(value)
+      }
+    const notifyError = index =>
+      error => {
+        cancel(index)
+        reject(error, index)
+      }
     let executions = taskArray.map((task, index) => {
       return task.fork(notifyError(index), notify(index))
     })
@@ -355,8 +362,8 @@ function clone (): TaskInstance {
 
 function repeat (times: number = 2): TaskInstance {
   const previousTask = this
-  const taskArray = Array.from(Array(times).keys())
-    .map(_ => previousTask.clone())
+  const taskArray = Array.from(Array(times).keys()).map(_ =>
+    previousTask.clone())
   return Task.sequence(taskArray)
 }
 
@@ -377,9 +384,40 @@ function retry (times: number = 2) {
 
 function makeForkable (subscription) {
   return function forkable (rej, res) {
-    var result = subscription(res, rej) // flipping arguments
-    if (!result || !result.cancel) return {cancel: noCancelHandler}
-    return result
+    let __value, __error
+
+    const inspector = () => {
+      if (__value === undefined && __error === undefined) {
+        return {status: 'PENDING', value: undefined}
+      } else if (__error !== undefined) {
+        return {status: 'REJECTED', value: __error}
+      } else {
+        return {status: 'RESOLVED', value: __value}
+      }
+    }
+
+    let execution = {
+      cancel: noCancelHandler,
+      inspect: inspector,
+      _isExecution: true
+    }
+
+    const wrappedResolve = val => {
+      __value = val
+      res(val)
+    }
+
+    const wrappedReject = err => {
+      __error = err
+      rej(err)
+    }
+
+    const runningTask = subscription(wrappedResolve, wrappedReject) // flipping arguments
+    if (runningTask && runningTask.cancel) {
+      execution.cancel = runningTask.cancel
+    }
+
+    return Object.freeze(execution)
   }
 }
 
@@ -391,13 +429,18 @@ function noCancelHandler () {
   )
 }
 
-function isGeneratorFunction(obj) {
-   var constructor = obj.constructor;
-   if (!constructor) return false;
-   if ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName) return true;
-   return isGenerator(constructor.prototype);
+function isGeneratorFunction (obj) {
+  var constructor = obj.constructor
+  if (!constructor) return false
+  if (
+    constructor.name === 'GeneratorFunction' ||
+    constructor.displayName === 'GeneratorFunction'
+  ) {
+    return true
+  }
+  return isGenerator(constructor.prototype)
 }
 
-function isGenerator(obj) {
-  return 'function' == typeof obj.next && 'function' == typeof obj.throw;
+function isGenerator (obj) {
+  return typeof obj.next === 'function' && typeof obj.throw === 'function'
 }

@@ -17,8 +17,6 @@ describe('Task', function () {
       expect(result).toEqual(value)
       done()
     })
-
-    expect(execution.cancel).toBeDefined()
   })
 })
 
