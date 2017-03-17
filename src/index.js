@@ -384,20 +384,26 @@ function retry (times: number = 2) {
 
 function makeForkable (subscription) {
   return function forkable (rej, res) {
-    let __value, __error
+    let __value, __error, __isCancelled = false
 
     const inspector = () => {
-      if (__value === undefined && __error === undefined) {
+      if(__isCancelled)
+        return {status: 'CANCELLED', value: undefined}
+
+      if (__value === undefined && __error === undefined)
         return {status: 'PENDING', value: undefined}
-      } else if (__error !== undefined) {
+
+      if (__error !== undefined)
         return {status: 'REJECTED', value: __error}
-      } else {
-        return {status: 'RESOLVED', value: __value}
-      }
+
+      return {status: 'RESOLVED', value: __value}
     }
 
     let execution = {
-      cancel: noCancelHandler,
+      cancel: () => {
+        __isCancelled = true
+        noCancelHandler()
+      },
       inspect: inspector,
       _isExecution: true
     }
@@ -414,7 +420,10 @@ function makeForkable (subscription) {
 
     const runningTask = subscription(wrappedResolve, wrappedReject) // flipping arguments
     if (runningTask && runningTask.cancel) {
-      execution.cancel = runningTask.cancel
+      execution.cancel = () => {
+        __isCancelled = true
+        runningTask.cancel()
+      }
     }
 
     return Object.freeze(execution)

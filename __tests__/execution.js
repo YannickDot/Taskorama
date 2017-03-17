@@ -23,18 +23,25 @@ describe('Execution', function () {
 })
 
 describe('Execution', function () {
-  it('should handle resolved/rejected states', function () {
+  it('should handle resolved/rejected/cancelled states', function () {
     var value = 42
     var resolvingTask = Task.of(value)
-    var execution = resolvingTask.fork(err => {}, res => {})
-    var executionState1 = execution.inspect()
+    var execution1 = resolvingTask.fork(err => {}, res => {})
+    var executionState1 = execution1.inspect()
 
     expect(executionState1).toEqual({ status: 'RESOLVED', value: value })
 
     var rejectingTask = Task.reject(value)
-    var execution = rejectingTask.fork(err => {}, res => {})
-    var executionState2 = execution.inspect()
+    var execution2 = rejectingTask.fork(err => {}, res => {})
+    var executionState2 = execution2.inspect()
 
     expect(executionState2).toEqual({ status: 'REJECTED', value: value })
+
+    var taskToCancel = Task.wait(100, value)
+    var execution3 = taskToCancel.fork(err => {}, res => {})
+    execution3.cancel()
+    var executionState3 = execution3.inspect()
+
+    expect(executionState3).toEqual({ status: 'CANCELLED', value: undefined })
   })
 })
