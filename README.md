@@ -465,7 +465,12 @@ I like using Promises but they have major design flaws IMHO :
 - They are **async by default** : i.e. `Promise.resolve(2)` ***always*** runs on the next tick
 - They are not cancellable (it's unfortunate that we can't cancel `window.fetch` http request when necessary)
 
-Tasks happen to be really simple and have richer semantics than Promises. So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
+Tasks happen to be really simple and have richer semantics than Promises :
+
+- Tasks are pure : they do not perform any side-effect as long as they are not executed by calling `.fork()` .
+- Tasks make a clear separation between **definition** and **execution**, while Promises mixes the two.
+
+So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
 
 I started this project after watching [this talk](https://www.youtube.com/watch?v=uQ1zhJHclvs) about Observables.
 
