@@ -468,7 +468,7 @@ I like using Promises but they have major design flaws IMHO :
 Tasks happen to be really simple and have richer semantics than Promises :
 
 - Tasks are pure : they do not perform any side-effect as long as they are not executed by calling `.fork()` .
-- Tasks make a clear separation between **definition** and **execution**, while Promises mixes the two.
+- Tasks make a clear separation between **definition** and **execution**, while Promises mix the two.
 
 So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
 
