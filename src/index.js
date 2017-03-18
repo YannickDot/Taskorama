@@ -7,55 +7,63 @@
 
 // @flow
 
-export type callback = (value: any) => any | void | null;
+export type terminationCallback = (value: any) => any | void | null;
 
 export type effectCallback = (value: any) => ?void;
 
 export type TaskExecution = {
   _isExecution: boolean,
   cancel: effectCallback,
-  inspect: (value: any) => {status: string, value: any}
+  inspect: (value: any) => {status: string, value?: any, reason?: any}
 };
 
-export type TaskDescription = (resolve: callback, reject: callback) => {
+export type TaskDescription = (
+  resolve: terminationCallback,
+  reject: terminationCallback
+) => {
   cancel: effectCallback
 };
 
-export type TaskInstance = {
-  _isTask: boolean,
-  fork: (reject: effectCallback, resolve: effectCallback) => TaskExecution,
-  run: (resolve: effectCallback) => TaskExecution,
-  map: (cb: callback) => TaskInstance,
-  flatMap: (cb: callback) => TaskInstance,
-  chain: (cb: callback) => TaskInstance,
-  then: (cb: callback) => TaskInstance,
-  catch: (cb: callback) => TaskInstance
-};
+function TaskInstance (computation: TaskDescription) {
+  this.__computation = makeForkable(computation)
+  this._isTask = true
+}
+
+TaskInstance.prototype.map = map
+TaskInstance.prototype.ap = ap
+TaskInstance.prototype.chain = chain
+TaskInstance.prototype.flatMap = chain
+TaskInstance.prototype.then = then
+TaskInstance.prototype.bind = then
+TaskInstance.prototype.catch = catchError
+TaskInstance.prototype.clone = clone
+TaskInstance.prototype.repeat = repeat
+TaskInstance.prototype.retry = retry
+
+TaskInstance.prototype.fork = function (rej, res) {
+  return this.__computation(rej, res)
+}
+TaskInstance.prototype.run = function (cb) {
+  return this.fork(x => console.log('Rejected because :', x), cb)
+}
 
 export default function Task (subscribe: TaskDescription): TaskInstance {
-  return Object.freeze({
-    _isTask: true,
-    map: map,
-    ap: ap,
-    chain: chain,
-    flatMap: chain,
-    then: then,
-    bind: then,
-    catch: catchError,
-    clone: clone,
-    repeat: repeat,
-    retry: retry,
-    fork: makeForkable(subscribe),
-    run: function (cb) {
-      return this.fork(x => console.log('rejected:', x), cb)
-    }
-  })
+  return Object.freeze(new TaskInstance(subscribe))
 }
 
 Task.of = function (value: any): TaskInstance {
   if (value && value._isTask) return value
   return Task(function (resolve, reject) {
     resolve(value)
+    return {cancel: noop}
+  })
+}
+
+Task.resolve = Task.of
+
+Task.reject = function (value: any): TaskInstance {
+  return Task(function (resolve, reject) {
+    reject(value)
     return {cancel: noop}
   })
 }
@@ -75,15 +83,6 @@ Task.do = function doT (genFn) {
   }
   return nextVal()
 }
-
-Task.reject = function (value: any): TaskInstance {
-  return Task(function (resolve, reject) {
-    reject(value)
-    return {cancel: noop}
-  })
-}
-
-Task.resolve = Task.of
 
 Task.all = function (taskArray: Array<TaskInstance>): TaskInstance {
   return Task(function (resolve, reject) {
@@ -231,22 +230,24 @@ function chain (cb): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
     let nextCancelCb
-    let previousCancel = previousTask.fork(reject, function (val) {
-      try {
-        let nextVal = cb(val)
-        let nextTask
-        if (!nextVal) {
-          nextTask = Task.of(undefined)
-        } else {
-          nextTask = nextVal
-        }
-        let nextRunningTask = nextTask.fork(reject, resolve)
-        nextCancelCb = nextRunningTask.cancel
-        return {cancel: nextRunningTask.cancel}
-      } catch (e) {
-        reject(e)
-      }
-    })
+    let previousCancel = previousTask.fork(
+      reject,
+      try_catch(
+        val => {
+          let nextVal = cb(val)
+          let nextTask
+          if (!nextVal) {
+            nextTask = Task.of(undefined)
+          } else {
+            nextTask = nextVal
+          }
+          let nextRunningTask = nextTask.fork(reject, resolve)
+          nextCancelCb = nextRunningTask.cancel
+          return {cancel: nextRunningTask.cancel}
+        },
+        reject
+      )
+    )
     let cancel = () => {
       if (nextCancelCb) nextCancelCb()
       previousCancel.cancel()
@@ -258,34 +259,41 @@ function chain (cb): TaskInstance {
 function map (cb): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
-    return previousTask.fork(reject, function (val) {
-      try {
-        let nextValue = cb(val)
-        resolve(nextValue)
-      } catch (e) {
-        reject(e)
-      }
-    })
+    return previousTask.fork(
+      reject,
+      try_catch(
+        val => {
+          let nextValue = cb(val)
+          resolve(nextValue)
+        },
+        reject
+      )
+    )
   })
 }
 
 function ap (taskToApply): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
-    return previousTask.fork(reject, function (fn) {
-      try {
-        taskToApply.fork(reject, function (val) {
-          try {
-            let nextValue = fn(val)
-            resolve(nextValue)
-          } catch (e) {
-            reject(e)
-          }
-        })
-      } catch (e) {
-        reject(e)
-      }
-    })
+    return previousTask.fork(
+      reject,
+      try_catch(
+        fn => {
+          taskToApply.fork(
+            reject,
+            try_catch(
+              val => {
+                let nextValue = fn(val)
+                resolve(nextValue)
+              },
+              reject
+            )
+          )
+        },
+        reject
+      ),
+      reject
+    )
   })
 }
 
@@ -293,24 +301,26 @@ function then (cb): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
     let nextCancelCb
-    let previousCancel = previousTask.fork(reject, function (val) {
-      try {
-        let nextResult = cb(val)
-        let nextTask
-        if (!nextResult) {
-          nextTask = Task.of(undefined)
-        } else if (nextResult && nextResult._isTask) {
-          nextTask = nextResult
-        } else {
-          nextTask = Task.of(nextResult)
-        }
-        let nextCancel = nextTask.fork(reject, resolve)
-        nextCancelCb = nextCancel.cancel
-        return {cancel: nextCancel.cancel}
-      } catch (e) {
-        reject(e)
-      }
-    })
+    let previousCancel = previousTask.fork(
+      reject,
+      try_catch(
+        val => {
+          let nextResult = cb(val)
+          let nextTask
+          if (!nextResult) {
+            nextTask = Task.of(undefined)
+          } else if (nextResult && nextResult._isTask) {
+            nextTask = nextResult
+          } else {
+            nextTask = Task.of(nextResult)
+          }
+          let nextCancel = nextTask.fork(reject, resolve)
+          nextCancelCb = nextCancel.cancel
+          return {cancel: nextCancel.cancel}
+        },
+        reject
+      )
+    )
     let cancel = () => {
       if (nextCancelCb) nextCancelCb()
       previousCancel.cancel()
@@ -324,10 +334,10 @@ function catchError (cb): TaskInstance {
   return Task(function (resolve, reject) {
     let nextCancelCb
     let previousCancel = previousTask.fork(
-      function (err) {
-        try {
+      try_catch(
+        err => {
           let nextResult = cb(err)
-          let nextTask
+          let nextTask = Task.of(undefined)
           if (!nextResult) {
             nextTask = Task.of(undefined)
           } else if (nextResult && nextResult._isTask) {
@@ -338,10 +348,9 @@ function catchError (cb): TaskInstance {
           let nextCancel = nextTask.fork(reject, resolve)
           nextCancelCb = nextCancel.cancel
           return {cancel: nextCancel.cancel}
-        } catch (e) {
-          reject(e)
-        }
-      },
+        },
+        reject
+      ),
       resolve
     )
 
@@ -387,16 +396,15 @@ function makeForkable (subscription) {
     let __value, __error, __isCancelled = false
 
     const inspector = () => {
-      if(__isCancelled)
-        return {status: 'CANCELLED', value: undefined}
+      if (__isCancelled) return {status: 'cancelled', value: undefined}
 
-      if (__value === undefined && __error === undefined)
-        return {status: 'PENDING', value: undefined}
+      if (__value === undefined && __error === undefined) {
+        return {status: 'pending', value: undefined}
+      }
 
-      if (__error !== undefined)
-        return {status: 'REJECTED', value: __error}
+      if (__error !== undefined) return {status: 'rejected', reason: __error}
 
-      return {status: 'RESOLVED', value: __value}
+      return {status: 'resolved', value: __value}
     }
 
     let execution = {
@@ -436,6 +444,16 @@ function noCancelHandler () {
   console.log(
     'Error: Cannot cancel Task chain. One or more tasks in the chain has no cancellation handler.'
   )
+}
+
+function try_catch (fn, onError) {
+  return function (arg) {
+    try {
+      return fn(arg)
+    } catch (err) {
+      onError(err)
+    }
+  }
 }
 
 function isGeneratorFunction (obj) {

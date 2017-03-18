@@ -18,7 +18,7 @@ describe('Execution', function () {
 
     var executionState = execution.inspect()
 
-    expect(executionState).toEqual({ status: 'PENDING', value: undefined })
+    expect(executionState).toEqual({ status: 'pending', value: undefined })
   })
 })
 
@@ -29,19 +29,19 @@ describe('Execution', function () {
     var execution1 = resolvingTask.fork(err => {}, res => {})
     var executionState1 = execution1.inspect()
 
-    expect(executionState1).toEqual({ status: 'RESOLVED', value: value })
+    expect(executionState1).toEqual({ status: 'resolved', value: value })
 
     var rejectingTask = Task.reject(value)
     var execution2 = rejectingTask.fork(err => {}, res => {})
     var executionState2 = execution2.inspect()
 
-    expect(executionState2).toEqual({ status: 'REJECTED', value: value })
+    expect(executionState2).toEqual({ status: 'rejected', reason: value })
 
     var taskToCancel = Task.wait(100, value)
     var execution3 = taskToCancel.fork(err => {}, res => {})
     execution3.cancel()
     var executionState3 = execution3.inspect()
 
-    expect(executionState3).toEqual({ status: 'CANCELLED', value: undefined })
+    expect(executionState3).toEqual({ status: 'cancelled' })
   })
 })
