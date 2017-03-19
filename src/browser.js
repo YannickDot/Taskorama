@@ -6,7 +6,7 @@
 */
 
 // @flow
-import type {TaskInstance} from './index.js'
+
 import Task from './index.js'
 
 Task.fetch = function (url: string, options: any = {}): TaskInstance {
