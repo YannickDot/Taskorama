@@ -30,6 +30,7 @@ function TaskInstance (computation: TaskDescription) {
 }
 
 TaskInstance.prototype.map = map
+TaskInstance.prototype.bimap = bimap
 TaskInstance.prototype.ap = ap
 TaskInstance.prototype.chain = chain
 TaskInstance.prototype.flatMap = chain
@@ -39,10 +40,12 @@ TaskInstance.prototype.catch = catchError
 TaskInstance.prototype.clone = clone
 TaskInstance.prototype.repeat = repeat
 TaskInstance.prototype.retry = retry
+TaskInstance.prototype.cache = cache
 
 TaskInstance.prototype.fork = function (rej, res) {
   return this.__computation(rej, res)
 }
+
 TaskInstance.prototype.run = function (cb) {
   return this.fork(x => console.log('Rejected because :', x), cb)
 }
@@ -226,6 +229,23 @@ Task.wait = function (time: number, value: any): TaskInstance {
   })
 }
 
+function cache (): TaskInstance {
+  let cachedExec
+  const previousTask = this
+  return Task(function (resolve, reject) {
+    let previousExec
+    if (!cachedExec) {
+      previousExec = (cachedExec = previousTask.fork(reject, resolve))
+      return previousExec
+    } else {
+      let ins = cachedExec.inspect()
+      if (ins.status === 'resolved') resolve(ins.value)
+      if (ins.status === 'rejected') reject(ins.reason)
+      return {cancel: cachedExec.cancel}
+    }
+  })
+}
+
 function chain (cb): TaskInstance {
   const previousTask = this
   return Task(function (resolve, reject) {
@@ -264,6 +284,28 @@ function map (cb): TaskInstance {
       try_catch(
         val => {
           let nextValue = cb(val)
+          resolve(nextValue)
+        },
+        reject
+      )
+    )
+  })
+}
+
+function bimap (cbRej, cbRes): TaskInstance {
+  const previousTask = this
+  return Task(function (resolve, reject) {
+    return previousTask.fork(
+      try_catch(
+        err => {
+          let nextValue = cbRej(err)
+          reject(nextValue)
+        },
+        reject
+      ),
+      try_catch(
+        val => {
+          let nextValue = cbRes(val)
           resolve(nextValue)
         },
         reject

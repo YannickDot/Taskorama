@@ -15,6 +15,31 @@ describe('Task instance', function () {
 })
 
 describe('Task instance', function () {
+  it('.bimap', function (done) {
+    var noop = () => {}
+    var value = 42
+    var error = 'argh'
+    var cbRej = x => x.toUpperCase()
+    var cbRes = x => x * 2
+    var resolvingTask = Task.of(value)
+    var rejectingTask = Task.reject(error)
+
+    resolvingTask.bimap(cbRej, cbRes).fork(noop, val => {
+      expect(val).toEqual(cbRes(value))
+      done()
+    })
+
+    rejectingTask.bimap(cbRej, cbRes).fork(
+      err => {
+        expect(err).toEqual(cbRej(error))
+        done()
+      },
+      noop
+    )
+  })
+})
+
+describe('Task instance', function () {
   it('.chain', function (done) {
     var value = 42
     var cb = x => Task.of(x + 1)
@@ -68,7 +93,6 @@ describe('Task instance', function () {
   })
 })
 
-
 describe('Task instance', function () {
   it('.catch', function (done) {
     var error = 'An error'
@@ -86,6 +110,25 @@ describe('Task instance', function () {
     thenChainTask.run(result => {
       cbChain(error).run(newVal => {
         expect(result).toEqual(newVal)
+        done()
+      })
+    })
+  })
+})
+
+describe('Task instance', function () {
+  it('.cache', function (done) {
+    var value = 42
+    var task = Task.wait(200, value)
+    var cachedTask = task.cache()
+
+    cachedTask.run(result => {
+      expect(result).toEqual(value)
+      let t1 = new Date()
+      cachedTask.run(r => {
+        let t2 = new Date()
+        expect(r).toEqual(value)
+        expect(t2-t1).toEqual(0)
         done()
       })
     })
