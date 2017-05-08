@@ -1,7 +1,7 @@
 import Task from '../src/index.js'
 
-describe('Task instance', function () {
-  it('.map', function (done) {
+describe('Task instance', function() {
+  it('.map', function(done) {
     var value = 42
     var cb = x => x + 1
     var task = Task.of(value)
@@ -14,8 +14,8 @@ describe('Task instance', function () {
   })
 })
 
-describe('Task instance', function () {
-  it('.bimap', function (done) {
+describe('Task instance', function() {
+  it('.bimap', function(done) {
     var noop = () => {}
     var value = 42
     var error = 'argh'
@@ -29,18 +29,15 @@ describe('Task instance', function () {
       done()
     })
 
-    rejectingTask.bimap(cbRej, cbRes).fork(
-      err => {
-        expect(err).toEqual(cbRej(error))
-        done()
-      },
-      noop
-    )
+    rejectingTask.bimap(cbRej, cbRes).fork(err => {
+      expect(err).toEqual(cbRej(error))
+      done()
+    }, noop)
   })
 })
 
-describe('Task instance', function () {
-  it('.chain', function (done) {
+describe('Task instance', function() {
+  it('.chain', function(done) {
     var value = 42
     var cb = x => Task.of(x + 1)
     var task = Task.of(value)
@@ -55,8 +52,8 @@ describe('Task instance', function () {
   })
 })
 
-describe('Task instance', function () {
-  it('.ap', function (done) {
+describe('Task instance', function() {
+  it('.ap', function(done) {
     var value1 = 3
     var value2 = 4
     var cb = x => y => x + y
@@ -71,8 +68,8 @@ describe('Task instance', function () {
   })
 })
 
-describe('Task instance', function () {
-  it('.then', function (done) {
+describe('Task instance', function() {
+  it('.then', function(done) {
     var value = 42
     var cbMap = x => x + 1
     var cbChain = x => Task.of(x + 1)
@@ -93,8 +90,8 @@ describe('Task instance', function () {
   })
 })
 
-describe('Task instance', function () {
-  it('.catch', function (done) {
+describe('Task instance', function() {
+  it('.catch', function(done) {
     var error = 'An error'
     var cbMap = err => err
     var cbChain = err => Task.of(err)
@@ -116,8 +113,8 @@ describe('Task instance', function () {
   })
 })
 
-describe('Task instance', function () {
-  it('.cache', function (done) {
+describe('Task instance', function() {
+  it('.cache', function(done) {
     var value = 42
     var task = Task.wait(200, value)
     var cachedTask = task.cache()
@@ -128,27 +125,27 @@ describe('Task instance', function () {
       cachedTask.run(r => {
         let t2 = new Date()
         expect(r).toEqual(value)
-        expect(t2-t1).toEqual(0)
+        expect(t2 - t1).toEqual(0)
         done()
       })
     })
   })
 })
 
-describe('Task instance', function () {
-  it('.repeat', function (done) {
+describe('Task instance', function() {
+  it('.repeat', function(done) {
     done()
   })
 })
 
-describe('Task instance', function () {
-  it('.clone', function (done) {
+describe('Task instance', function() {
+  it('.clone', function(done) {
     done()
   })
 })
 
-describe('Task instance', function () {
-  it('.retry', function (done) {
+describe('Task instance', function() {
+  it('.retry', function(done) {
     done()
   })
 })

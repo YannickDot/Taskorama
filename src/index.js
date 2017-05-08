@@ -18,8 +18,8 @@ export type TaskExecution = {
 }
 
 export type TaskDescription = (
-  resolve: terminationCallback,
-  reject: terminationCallback
+  reject: terminationCallback,
+  resolve: terminationCallback
 ) => {
   cancel: effectCallback
 }
@@ -54,9 +54,13 @@ export default function Task(subscribe: TaskDescription): TaskInstance {
   return Object.freeze(new TaskInstance(subscribe))
 }
 
+Task.flippedArgs = function(fn) {
+  return Task(flip2(fn))
+}
+
 Task.of = function(value: any): TaskInstance {
   if (value && value._isTask) return value
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     resolve(value)
     return { cancel: noop }
   })
@@ -65,7 +69,7 @@ Task.of = function(value: any): TaskInstance {
 Task.resolve = Task.of
 
 Task.reject = function(value: any): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, _) {
     reject(value)
     return { cancel: noop }
   })
@@ -88,7 +92,7 @@ Task.do = function doT(genFn) {
 }
 
 Task.all = function(taskArray: Array<TaskInstance>): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let remainingTasks = taskArray.length
     let results = {}
     let keys = []
@@ -125,7 +129,7 @@ Task.all = function(taskArray: Array<TaskInstance>): TaskInstance {
 }
 
 Task.race = function(taskArray: Array<TaskInstance>): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     const notify = index => value => {
       cancel(index)
       resolve(value)
@@ -151,7 +155,7 @@ Task.race = function(taskArray: Array<TaskInstance>): TaskInstance {
 }
 
 Task.sequence = function(taskArray: Array<TaskInstance>): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     const results = []
     const [fst, ...rest] = taskArray.map((task, index) => {
       return task.catch(err => {
@@ -179,7 +183,7 @@ Task.sequence = function(taskArray: Array<TaskInstance>): TaskInstance {
 }
 
 Task.parallel = function(taskArray: Array<TaskInstance>): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let remainingTasks = taskArray.length
     let results = []
     const parallellizedTasks = taskArray.map((task, index) => {
@@ -203,7 +207,7 @@ Task.parallel = function(taskArray: Array<TaskInstance>): TaskInstance {
 }
 
 Task.fromPromise = function(promise: Promise<any>): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     promise.then(resolve, reject)
     return {
       cancel: () => {
@@ -216,7 +220,7 @@ Task.fromPromise = function(promise: Promise<any>): TaskInstance {
 }
 
 Task.wait = function(time: number, value: any): TaskInstance {
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let timerId = setTimeout(_ => resolve(value), time)
     return { cancel: () => clearTimeout(timerId) }
   })
@@ -225,7 +229,7 @@ Task.wait = function(time: number, value: any): TaskInstance {
 function cache(): TaskInstance {
   let cachedExec
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let previousExec
     if (!cachedExec) {
       previousExec = cachedExec = previousTask.fork(reject, resolve)
@@ -241,7 +245,7 @@ function cache(): TaskInstance {
 
 function chain(cb): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let nextCancelCb
     let previousCancel = previousTask.fork(
       reject,
@@ -268,7 +272,7 @@ function chain(cb): TaskInstance {
 
 function map(cb): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     return previousTask.fork(
       reject,
       try_catch(val => {
@@ -281,7 +285,7 @@ function map(cb): TaskInstance {
 
 function bimap(cbRej, cbRes): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     return previousTask.fork(
       try_catch(err => {
         let nextValue = cbRej(err)
@@ -297,7 +301,7 @@ function bimap(cbRej, cbRes): TaskInstance {
 
 function ap(taskToApply): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     return previousTask.fork(
       reject,
       try_catch(fn => {
@@ -316,7 +320,7 @@ function ap(taskToApply): TaskInstance {
 
 function then(cb): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let nextCancelCb
     let previousCancel = previousTask.fork(
       reject,
@@ -345,7 +349,7 @@ function then(cb): TaskInstance {
 
 function catchError(cb): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let nextCancelCb
     let previousCancel = previousTask.fork(
       try_catch(err => {
@@ -375,7 +379,7 @@ function catchError(cb): TaskInstance {
 
 function clone(): TaskInstance {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     return previousTask.fork(reject, resolve)
   })
 }
@@ -390,7 +394,7 @@ function repeat(times: number = 2): TaskInstance {
 
 function retry(times: number = 2) {
   const previousTask = this
-  return Task(function(resolve, reject) {
+  return Task(function(reject, resolve) {
     let fallbackTask = previousTask
     let retryiedTask = previousTask
     for (let i = 0; i < times; i++) {
@@ -438,7 +442,7 @@ function makeForkable(subscription) {
       rej(err)
     }
 
-    const runningTask = subscription(wrappedResolve, wrappedReject) // flipping arguments
+    const runningTask = subscription(wrappedReject, wrappedResolve) // flipping arguments
     if (runningTask && runningTask.cancel) {
       execution.cancel = () => {
         __isCancelled = true
@@ -482,4 +486,8 @@ function isGeneratorFunction(obj) {
 
 function isGenerator(obj) {
   return typeof obj.next === 'function' && typeof obj.throw === 'function'
+}
+
+function flip2(fn) {
+  return (a, b) => fn(b, a)
 }

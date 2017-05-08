@@ -2,7 +2,7 @@ var fs = require('fs')
 var Task = require('../main.js').default
 
 const FileSystem = {
-  readFile (path) {
+  readFile(path) {
     return Task((res, rej) => {
       fs.readFile(path, 'utf8', (err, contents) => {
         if (err) {
@@ -17,13 +17,11 @@ const FileSystem = {
 
 // WITH NORMAL TASKS
 
-
-
 const main = Task.do(function*() {
   const gitignore = yield FileSystem.readFile('./.gitignore')
   const npmignore = yield FileSystem.readFile('./.npmignore')
 
-  return {npmignore, gitignore}
+  return { npmignore, gitignore }
 })
 
 // -> 'main' is a Task !
@@ -35,10 +33,6 @@ main.fork(
 
 // -> logs : { npmignore : '...', gitignore: '...' }
 
-
-
-
-
 // WITH TASK.ALL
 
 const program1 = Task.do(function*() {
@@ -47,7 +41,7 @@ const program1 = Task.do(function*() {
     FileSystem.readFile('./.npmignore')
   ])
 
-  return {npmignore, gitignore}
+  return { npmignore, gitignore }
 })
 
 program1.fork(
@@ -62,7 +56,7 @@ const program2 = Task.do(function*() {
     .ap(FileSystem.readFile('./.gitignore'))
     .ap(FileSystem.readFile('./.npmignore'))
 
-  return {gitignore, npmignore}
+  return { gitignore, npmignore }
 })
 
 let e = program2.fork(

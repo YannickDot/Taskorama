@@ -1,10 +1,10 @@
 import Task from '../src/index.js'
 
-describe('Execution', function () {
-  it('#fork should return an Execution', function () {
+describe('Execution', function() {
+  it('#fork should return an Execution', function() {
     var value = 42
 
-    function computation (resolve, reject) {
+    function computation(resolve, reject) {
       setTimeout(_ => resolve(value), 100)
     }
 
@@ -22,8 +22,8 @@ describe('Execution', function () {
   })
 })
 
-describe('Execution', function () {
-  it('should handle resolved/rejected/cancelled states', function () {
+describe('Execution', function() {
+  it('should handle resolved/rejected/cancelled states', function() {
     var value = 42
     var resolvingTask = Task.of(value)
     var execution1 = resolvingTask.fork(err => {}, res => {})

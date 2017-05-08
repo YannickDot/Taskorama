@@ -9,8 +9,8 @@
 
 import Task from './index.js'
 
-Task.fetch = function (url: string, options: any = {}): TaskInstance {
-  return Task(function (resolve, reject) {
+Task.fetch = function(url: string, options: any = {}): TaskInstance {
+  return Task(function(reject, resolve) {
     var xhr = new XMLHttpRequest()
     xhr.open(options.method || 'get', url, true)
     xhr.onerror = reject
@@ -32,7 +32,7 @@ Task.fetch = function (url: string, options: any = {}): TaskInstance {
     }
     xhr.send()
 
-    return {cancel: () => xhr.abort()}
+    return { cancel: () => xhr.abort() }
   })
 }
 
