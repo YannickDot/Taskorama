@@ -7,7 +7,7 @@
   </p>
   <h1 align="center">Taskorama</h1>
   <p align="center">
-    <b align="center">Taskorama is a tiny Task data type for JavaScript (~1.7Kb gzipped)</b>
+    <b align="center">Taskorama is a tiny Task data type for JavaScript (~2.3Kb gzipped)</b>
   </p>
   <p align="center">
     <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
