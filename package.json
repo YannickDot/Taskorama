@@ -7,7 +7,7 @@
   "scripts": {
     "test": "exit 0",
     "test:w": "jest --watch",
-    "clean-dist": "rimraf dist",
+    "clean-dist": "exit 0",
     "prestart": "npm run clean-dist",
     "dev": "npm run prestart && webpack --env.dev --progress --color --watch",
     "build": "npm run prestart && webpack --env.prod",
