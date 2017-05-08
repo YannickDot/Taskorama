@@ -10,10 +10,11 @@
 import Task from './index.js'
 
 Task.fetch = function (url: string, options: any = {}): TaskInstance {
-  return Task(function (resolve, reject) {
+  return Task(function (resolve, reject, onprogress) {
     var xhr = new XMLHttpRequest()
     xhr.open(options.method || 'get', url, true)
     xhr.onerror = reject
+    if(onprogress) xhr.onprogress = onprogress
     xhr.onload = () => {
       if (xhr.status == 200) {
         resolve({
@@ -27,7 +28,7 @@ Task.fetch = function (url: string, options: any = {}): TaskInstance {
           url: url
         })
       } else {
-        reject(status)
+        reject(xhr.status)
       }
     }
     xhr.send()
