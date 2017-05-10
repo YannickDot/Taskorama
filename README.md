@@ -2,7 +2,7 @@
 
   <p align="center">
    <br/>
-   <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="180" height="180" alt="Taskorama">
+   <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="150" height="150" alt="Taskorama">
    <br/>
   </p>
   <h1 align="center">Taskorama</h1>
@@ -18,6 +18,8 @@
 <br/>
 <br/>
 
+**UPDATE: v2.0.0 is out! See the [changelog](https://github.com/YannickDot/taskorama/releases/tag/v2.0.0)**
+
 Taskorama is an implementation of the Task data type.
 It is used to express **concurrent**, **asynchronous** and **cancellable computations** using **functional programming** constructs.
 
@@ -29,7 +31,7 @@ Here is an example of how you can use them :
 import Task from 'taskorama'
 
 // Let's create a Task
-const myTimeoutTask = Task(function (resolve, reject) {
+const myTimeoutTask = Task(function (reject, resolve) {
 
   // complete task succesfully after 3s
   let timer = setTimeout(resolve, 3000)
@@ -74,6 +76,8 @@ https://unpkg.com/taskorama
 
 ## Usage
 
+_The full API docs is available here : [Taskorama Docs](https://github.com/YannickDot/taskorama/wiki/API)_
+
 ### Creating a Task
 
 ```js
@@ -112,349 +116,6 @@ runningTask.cancel() // --> 'cancelled !'
 
 ```
 
-
-## Migrating some Promise-based code to Taskorama
-
-#### With Promises :
-
-```js
-let myPromise = new Promise(function(resolve, reject) {
-  setTimeout(resolve, 300)
-})
-
-myPromise
-  .then(_ => "Timeout done !")
-  .then(value => {
-    throw "oops!"
-  })
-  .then(_ => "There was an error up there. I won't be received.")
-  .catch(error => console.log(`Caught the error : ${error}`))
-  .then(_ => "Everything's fine now !")
-```
-
-#### With Tasks :
-
-```js
-// `Task` is the constructor
-let myTask = Task(function(resolve, reject) {
-  setTimeout(resolve, 300)
-})
-
-// It has the same semantics with `.then` and `.catch`
-myTask
-  .then(_ => "Timeout done !")
-  .then(value => {
-    throw "oops!"
-  })
-  .then(_ => "There was an error up there. I won't be received.")
-  .catch(error => console.log(`Caught the error : ${error}`))
-  .then(_ => "Everything's fine now !")
-
-// BUT ... the computation is deferred.
-// It must be run using `.fork(errorCb, successCb)` or `.run(successCb)`.
-let myRunningTask = myTask.fork(
-  // No more `Unhandled rejection` errors. You're forced to handle error at the end of the chain.
-  (error) => console.log(`Got the error : ${error}`),
-  (finalResult) => console.log(`The final result is : ${finalResult}`)
-)
-
-// OR
-
-// `.run(cb)` is an alias for `.fork(console.error, cb)`
-let myRunningTask = myTask.run(finalResult => console.log(`The final result is : ${finalResult}`))
-```
-
-**BONUS**
-
-You may want to cancel the computation :
-```js
-let myTask = Task(function(resolve, reject) {
-  let timeoutHandler = setTimeout(resolve, 300)
-
-  // If you want it to be cancellable
-  let cancelTimeout = () => clearTimeout(timeoutHandler)
-  return { cancel: cancelTimeout }
-})
-
-/* ... */
-
-// Let's cancel it !
-myRunningTask.cancel()
-```
-
-## API
-
-
-### Instance methods
-
-```js
-// create a Task
-const myTimeoutTask = Task(function (resolve, reject) {
-  let timer = setTimeout(function () {
-    resolve(42) // complete task succesfully with value '42' after 3s
-  }, 3000)
-
-  // execute `cancel` to stop the timeout
-  let cancel = () => clearTimeout(timer)
-  return {cancel}
-})
-```
-
-#### .fork(errorEffect, successEffect)
-
-```js
-myTimeoutTask
-  .fork(console.error, console.log)
-// logs : 42
-```
-
-#### .run(successEffect)
-`.run(myCb)` is an alias for `.fork(console.error, myCb)`
-
-```js
-myTimeoutTask
-  .run(console.log)
-// logs : 42
-```
-
-#### .map()
-
-```js
-myTimeoutTask
-  .map(x => x * 2)
-  .fork(console.error, console.log)
-// logs : 84
-```
-
-
-#### .ap()
-
-```js
-Task.of(x => x * 2)
-  .ap(Task.of(42))
-  .fork(console.error, console.log)
-// logs: 84
-```
-
-
-#### .chain() / .flatMap()
-
-```js
-myTimeoutTask
-  .chain(val => Task.of(val * 2))
-  .flatMap(val => Task.of(val + 1))
-  .fork(console.error, console.log)
-// logs: 85
-```
-
-#### .then()
-
-```js
-myTimeoutTask
-  .then(x => x * 2)
-  .then(val => Task.of(val + 1))
-  .fork(console.error, console.log)
-// logs: 85
-```
-
-#### .catch()
-
-```js
-myTimeoutTask
-  .then(x => {
-    throw 'argh'
-  })
-  .then(x => 42)
-  .catch(err => "Cool, it's fine now.")
-  .fork(console.error, console.log)
-// logs: "Cool, it's fine now."
-```
-
-
-### Static methods
-
-#### Task.of / Task.resolve
-Creates a task that completes immediately with the passed value.
-
-```js
-const task = Task.of(200)
-task.fork(console.error, console.log)
-// logs: 200
-```
-
-#### Task.reject
-Creates a task that rejects immediately with the passed value.
-
-```js
-const task = Task.reject(404)
-task.fork(console.error, console.log)
-// logs error: 404
-```
-
-#### Task.do(* generatorFn)
-Using JavaScript's generators to introduce a synchronous-looking syntax for chaining Tasks.
-This is inspired by Async/Await for Promises and Haskell's do notation for Monads.
-
-
-```js
-const fetchJSON = url => Task.fetch(url).then(r => r.json())
-
-const main = Task.do(function *() {
-  const posts = yield fetchJSON('/posts')
-  const users = yield fetchJSON('/users')
-
-  yield Task.wait(2000) // Lets pause for 2 sec.
-
-  return {posts, users}
-})
-// -> 'main' is a Task
-
-main
-  .fork(console.error, console.log)
-
-// -> logs: { posts: [...],  users: [...] }
-
-```
-
-
-#### Task.fetch(url)
-Creates a task that makes a request on the specified url.
-It resolves with a Response object.
-
-The `Response` object exposes the following readers at the moment :
-- `.json()`
-- `.text()`
-
-`Task.fetch` try to mimic the behavior of the [fetch API](https://developers.google.com/web/updates/2015/03/introduction-to-fetch)
-
-```js
-const url = 'https://jsonplaceholder.typicode.com/users'
-const requestTask = Task.fetch(url)
-  .then(response => response.json())
-
-const runningRequest = requestTask.fork(console.error, console.log)
-// logs: [Object, Object, ..., Object]
-```
-
-Any inflight request can be cancelled like this :
-```js
-runningRequest.cancel()
-```
-
-#### Task.wait
-Creates a task that completes after a certain duration (first argument).
-It resolves with the value passed as second argument.
-
-```js
-const timeoutTask = Task.wait(10000, "I'm done !")
-const execTimeout = timeoutTask.fork(console.error, console.log)
-// logs: "I'm done !" - after 10s
-```
-
-It can be cancelled like this :
-```js
-execTimeout.cancel()
-// the timeout is cancelled.
-```
-
-#### Task.all(array)
-Creates a task that completes when all the tasks in the array are completed.
-It resolves with an array containing each value of each task of the array.
-If any of them rejects, the returned task rejects with the rejection reason.
-
-If it is cancelled, it cancels all the tasks in the array as well.
-
-```js
-const taskArray = [
-  Task.wait(2000,`one`),
-  Task.wait(3000,`two`),
-  Task.wait(1000,`three`),
-  Task.wait(4000,`four`),
-]
-
-const tasksAll = Task.all(taskArray)
-
-tasksAll
-  .fork(console.error, console.log)
-// logs: ['one', 'two', 'three', 'four'] - after 4s
-```
-
-#### Task.race
-Creates a task that is fulfilled or rejected as soon as a task in the array is fulfilled or rejected.
-
-If it is cancelled, it cancels all the tasks in the array as well.
-
-```js
-const taskArray = [
-  Task.wait(2000,`one`),
-  Task.wait(3000,`two`),
-  Task.wait(1000,`three`),
-  Task.wait(4000,`four`),
-]
-
-const tasksRace = Task.race(taskArray)
-
-tasksRace
-  .fork(console.error, console.log)
-// logs: 'three' - after 1s
-```
-
-#### Task.sequence
-Creates a task from an array of tasks, and run them in order.
-It resolves with an array containing the results of the execution of every task in the array in their initial order.
-
-If it is cancelled, it cancels all the tasks in the array as well.
-
-```js
-const taskArray = [
-  Task.wait(2000,`one`),
-  Task.wait(3000,`two`),
-  Task.wait(1000,`three`)
-]
-
-const tasksSequence = Task.sequence(taskArray)
-
-tasksSequence
-  .fork(console.error, console.log)
-// logs: ['one', 'two', 'three'] - after 6s
-```
-
-#### Task.parallel
-Creates a task from an array of tasks, and run them concurrently.
-It resolves with an array containing the results of the execution of every task in the array in their order of completion.
-
-If it is cancelled, it cancels all the tasks in the array as well.
-
-```js
-const taskArray = [
-  Task.wait(2000,`one`),
-  Task.wait(3000,`two`),
-  Task.wait(1000,`three`)
-]
-
-const tasksParallel = Task.parallel(taskArray)
-
-tasksParallel
-  .fork(console.error, console.log)
-// logs: ['three', 'one', 'two'] - after 3s
-```
-
-#### Task.fromPromise
-Creates a task from an existing Promise.
-Such a task cannot be cancelled because a Promise is not cancellable.
-
-```js
-const p = Promise.resolve(2)
-const taskFromPromise = Task.fromPromise(p)
-
-taskFromPromise
-  .fork(console.error, console.log)
-// logs: 2
-```
-
-
-_You can still have a look at the [tonic-example.js](./tonic-example.js) file_
-
 # Rationale
 
 I created this lib when I tried to implement Tasks in JavaScript in order to understand how do they work.
@@ -475,3 +136,8 @@ So I decided to replace Promises by Tasks in my code in order to separate pure d
 I started this project after watching [this talk](https://www.youtube.com/watch?v=uQ1zhJHclvs) about Observables.
 
 The internals of Taskorama are similar to the one used in case explained in this video.
+
+
+## License
+
+Taskorama is released under the MIT license. See LICENSE for details.
