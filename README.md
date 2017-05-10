@@ -2,7 +2,7 @@
 
   <p align="center">
    <br/>
-   <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="150" height="150" alt="Taskorama">
+   <img src="https://cdn.jsdelivr.net/emojione/assets/svg/2699.svg" width="10" height="150" alt="Taskorama">
    <br/>
   </p>
   <h1 align="center">Taskorama</h1>
@@ -18,7 +18,7 @@
 <br/>
 <br/>
 
-**UPDATE: v2.0.0 is out! See the [changelog](https://github.com/YannickDot/taskorama/releases/tag/v2.0.0)**
+<p align="center">**UPDATE: v2.0.0 is out! See the [changelog](https://github.com/YannickDot/taskorama/releases/tag/v2.0.0)**</p>
 
 Taskorama is an implementation of the Task data type.
 It is used to express **concurrent**, **asynchronous** and **cancellable computations** using **functional programming** constructs.
