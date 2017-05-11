@@ -7,4 +7,7 @@ src/
 test/
 serve/
 
+rollup.config.browser.js
+rollup.config.node.js
+
 index.html

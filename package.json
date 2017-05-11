@@ -10,7 +10,9 @@
     "clean-dist": "rimraf ./dist",
     "prestart": "yarn run clean-dist",
     "dev": "yarn run prestart && webpack --env.dev --progress --color --watch",
-    "build": "yarn run prestart && webpack --env.prod",
+    "build": "yarn run prestart && yarn run build:rollup-node && yarn run build:rollup-web",
+    "build:rollup-node": "rollup --config rollup.config.node.js",
+    "build:rollup-web": "rollup --config rollup.config.browser.js",
     "dev-server": "webpack-dev-server --env.devServer"
   },
   "repository": {
@@ -55,6 +57,11 @@
     "flow-bin": "^0.45.0",
     "jest": "^20.0.0",
     "rimraf": "^2.6.1",
+    "rollup": "^0.41.6",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-butternut": "^0.1.0",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-watch": "^3.2.2",
     "webpack": "^2.5.1",
     "webpack-dev-server": "^2.4.5"
   }
