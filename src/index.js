@@ -47,6 +47,7 @@ TaskInstance.prototype.fork = function(rej, res) {
 }
 
 TaskInstance.prototype.run = function(cb) {
+  cb = cb || noop
   return this.fork(x => console.log('Rejected because :', x), cb)
 }
 
