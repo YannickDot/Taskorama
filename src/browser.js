@@ -36,24 +36,33 @@ Task.fetch = function(url: string, options: any = {}): TaskInstance {
   })
 }
 
-Task.runInWorker = function(workerFn) {
+function createVars(context) {
+  let str = Object.keys(context)
+    .reduce((acc, key) => {
+      acc.push(`const ${key} = ${JSON.stringify(context[key])};`)
+      return acc
+    }, [])
+    .join('\n')
+  console.log(str)
+  return str
+}
+
+Task.runInWorker = function(workerFn, context) {
   return Task(function(reject, resolve) {
     const workerCode = workerFn.toString()
-    const matches = workerCode.match(/^function .+\{?|\}$/g, '')
-    const firstMatch = matches[0]
-    const callback = firstMatch.substring(
-      firstMatch.indexOf('(') + 1,
-      firstMatch.lastIndexOf(')')
+    const callback = workerCode.substring(
+      workerCode.indexOf('(') + 1,
+      workerCode.indexOf(')')
     )
-    const callbackCode = callback.length !== 0
-      ? `const ${callback} = dispatchToMain`
-      : ''
+    const callbackCode =
+      (callback.length !== 0 && `const ${callback} = dispatchToMain`) || ''
 
     const code = `
   importScripts('https://unpkg.com/taskorama@2.0.0')
   const Task = taskorama.default
   const dispatchToMain = (x) => postMessage(JSON.stringify(x))
   ${callbackCode}
+  ${createVars(context)}
   ${workerCode.substring(workerCode.indexOf('{') + 1, workerCode.lastIndexOf('}'))}`
     console.log(code)
 
