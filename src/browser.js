@@ -36,4 +36,43 @@ Task.fetch = function(url: string, options: any = {}): TaskInstance {
   })
 }
 
+Task.runInWorker = function(workerFn) {
+  return Task(function(reject, resolve) {
+    const workerCode = workerFn.toString()
+    const matches = workerCode.match(/^function .+\{?|\}$/g, '')
+    const firstMatch = matches[0]
+    const callback = firstMatch.substring(
+      firstMatch.indexOf('(') + 1,
+      firstMatch.lastIndexOf(')')
+    )
+    const callbackCode = callback.length !== 0
+      ? `const ${callback} = dispatchToMain`
+      : ''
+
+    const code = `
+  importScripts('https://unpkg.com/taskorama@2.0.0')
+  const Task = taskorama.default
+  const dispatchToMain = (x) => postMessage(JSON.stringify(x))
+  ${callbackCode}
+  ${workerCode.substring(workerCode.indexOf('{') + 1, workerCode.lastIndexOf('}'))}`
+    console.log(code)
+
+    const blob = new Blob([code], { type: 'application/javascript' })
+    const worker = new Worker(URL.createObjectURL(blob))
+    let cancel = () => worker.terminate()
+
+    worker.onmessage = function(msg) {
+      resolve(JSON.parse(msg.data))
+      worker.terminate()
+    }
+
+    worker.onerror = function(err) {
+      reject(err)
+      worker.terminate()
+    }
+
+    return { cancel }
+  })
+}
+
 export default Task
