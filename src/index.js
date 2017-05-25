@@ -48,7 +48,7 @@ TaskInstance.prototype.fork = function(rej, res) {
 
 TaskInstance.prototype.run = function(cb) {
   cb = cb || noop
-  return this.fork(x => console.log('Rejected because :', x), cb)
+  return this.fork(x => console.log('Rejected - reason : ', x), cb)
 }
 
 export default function Task(subscribe: TaskDescription): TaskInstance {
@@ -424,23 +424,52 @@ function makeForkable(subscription) {
       return { status: 'resolved', value: __value }
     }
 
+    const em = eventEmitter()
+
+    const promisify = () => {
+      return new Promise((resolve, reject) => {
+        const { status, reason, value } = inspector()
+        switch (status) {
+          case 'pending':
+            em.once('error', reject)
+            em.once('value', resolve)
+            break
+          case 'rejected':
+            reject(reason)
+            break
+          case 'resolved':
+            resolve(value)
+            break
+          case 'cancelled':
+            resolve('cancelled')
+            break
+          default:
+        }
+      })
+    }
+
     let execution = {
       cancel: () => {
         __isCancelled = true
         noCancelHandler()
       },
       inspect: inspector,
+      promisify: promisify,
       _isExecution: true
     }
 
     const wrappedResolve = val => {
       __value = val
+      em.emit('value', val)
       res(val)
+      // trigger promise
     }
 
     const wrappedReject = err => {
       __error = err
+      em.emit('error', err)
       rej(err)
+      // trigger promise
     }
 
     const runningTask = subscription(wrappedReject, wrappedResolve) // flipping arguments
@@ -491,4 +520,32 @@ function isGenerator(obj) {
 
 function flip2(fn) {
   return (a, b) => fn(b, a)
+}
+
+function eventEmitter() {
+  const registered = {}
+
+  const off = (type, handler) => {
+    if (registered[type]) {
+      registered[type] = null
+    }
+  }
+
+  const emit = (type, evt) => {
+    const handler = registered[type]
+    if (handler) handler(evt)
+  }
+
+  const on = (type, handler) => {
+    registered[type] = handler
+  }
+
+  const once = (type, handler) => {
+    on(type, (...args) => {
+      handler(...args)
+      off(type, handler)
+    })
+  }
+
+  return { once, on, off, emit }
 }

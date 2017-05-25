@@ -43,7 +43,6 @@ function createVars(context) {
       return acc
     }, [])
     .join('\n')
-  console.log(str)
   return str
 }
 
@@ -64,7 +63,6 @@ Task.runInWorker = function(workerFn, context) {
   ${callbackCode}
   ${createVars(context)}
   ${workerCode.substring(workerCode.indexOf('{') + 1, workerCode.lastIndexOf('}'))}`
-    console.log(code)
 
     const blob = new Blob([code], { type: 'application/javascript' })
     const worker = new Worker(URL.createObjectURL(blob))

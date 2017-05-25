@@ -45,3 +45,33 @@ describe('Execution', function() {
     expect(executionState3).toEqual({ status: 'cancelled' })
   })
 })
+
+describe('Execution', function() {
+  it('.promisify() should return a promise', function() {
+    var value = 42
+    var resolvingTask = Task.of(value)
+    var execution1 = resolvingTask.fork(err => {}, res => {})
+    var promise1 = execution1.promisify()
+
+    promise1.then(v => {
+      expect(v).toEqual(value)
+    })
+
+    var rejectingTask = Task.reject(value)
+    var execution2 = rejectingTask.fork(err => {}, res => {})
+    var promise2 = execution2.promisify()
+
+    promise2.catch(err => {
+      expect(err).toEqual(value)
+    })
+
+    var taskToCancel = Task.wait(100, value)
+    var execution3 = taskToCancel.fork(err => {}, res => {})
+    execution3.cancel()
+    var promise3 = execution3.promisify()
+
+    promise3.then(v => {
+      expect(v).toEqual('cancelled')
+    })
+  })
+})
