@@ -1,10 +1,3 @@
-/**
-* @Author: Yannick Spark <yannickdot>
-* @Date:   2017-02-09T11:28:40+01:00
-* @Last modified by:   Yannick Spark
-* @Last modified time: 2017-02-15T12:02:02+01:00
-*/
-
 // @flow
 
 export type terminationCallback = (value: any) => any | void | null
