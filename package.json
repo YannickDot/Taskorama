@@ -1,6 +1,6 @@
 {
   "name": "taskorama",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Taskorama",
   "main": "./main.js",
   "browser": "./browser.js",
