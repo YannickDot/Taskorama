@@ -16,7 +16,7 @@ describe('Execution', function() {
     expect(execution.cancel).toBeDefined()
     expect(execution.inspect).toBeDefined()
 
-    var executionState = execution.inspect()
+    var executionState = execution.getStatus()
 
     expect(executionState).toEqual({ status: 'pending', value: undefined })
   })
@@ -27,20 +27,20 @@ describe('Execution', function() {
     var value = 42
     var resolvingTask = Task.of(value)
     var execution1 = resolvingTask.fork(err => {}, res => {})
-    var executionState1 = execution1.inspect()
+    var executionState1 = execution1.getStatus()
 
     expect(executionState1).toEqual({ status: 'resolved', value: value })
 
     var rejectingTask = Task.reject(value)
     var execution2 = rejectingTask.fork(err => {}, res => {})
-    var executionState2 = execution2.inspect()
+    var executionState2 = execution2.getStatus()
 
     expect(executionState2).toEqual({ status: 'rejected', reason: value })
 
     var taskToCancel = Task.wait(100, value)
     var execution3 = taskToCancel.fork(err => {}, res => {})
     execution3.cancel()
-    var executionState3 = execution3.inspect()
+    var executionState3 = execution3.getStatus()
 
     expect(executionState3).toEqual({ status: 'cancelled' })
   })
