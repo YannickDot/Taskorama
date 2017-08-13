@@ -1,6 +1,7 @@
 var fs = require('fs')
-var Task = require('../main.js').default
+var Task = require('../main.js')
 
+/*
 const FileSystem = {
   readFile(path) {
     return Task((res, rej) => {
@@ -62,4 +63,6 @@ const program2 = Task.do(function*() {
 let e = program2.fork(
   err => console.log('WITH APPLICATIVE FUNCTOR : error! --> ', err),
   files => console.log('WITH APPLICATIVE FUNCTOR : success! --> ', files)
-)
+)*/
+
+console.log(Task.of(6).run())

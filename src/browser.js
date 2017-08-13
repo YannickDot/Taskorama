@@ -1,15 +1,42 @@
-/**
-* @Author: Yannick Spark <yannickdot>
-* @Date:   2017-02-09T11:28:40+01:00
-* @Last modified by:   yannickdot
-* @Last modified time: 2017-02-09T11:52:19+01:00
-*/
-
 // @flow
 
 import Task from './index.js'
 
-Task.fetch = function(url: string, options: any = {}): TaskInstance {
+function leanFetch(
+  url /*: string*/,
+  options /*: any*/ = {},
+  onResult,
+  onError
+) {
+  var xhr = new XMLHttpRequest()
+  xhr.open(options.method || 'get', url, true)
+  xhr.onerror = onError
+
+  xhr.onload = () => {
+    if (xhr.status == 200) {
+      onResult({
+        json: () => JSON.parse(xhr.responseText),
+        text: () => xhr.responseText,
+        xml: () => xhr.responseXML,
+        blob: () => new Blob([xhr.response]),
+        xhr: xhr,
+        statusText: xhr.statusText,
+        status: xhr.status,
+        url: url
+      })
+    } else {
+      onError(status)
+    }
+  }
+  xhr.send()
+
+  return () => xhr.abort()
+}
+
+Task.fetch = function(
+  url /*: string*/,
+  options /*: any*/ = {}
+) /*: TaskInstance*/ {
   return Task(function(reject, resolve) {
     var xhr = new XMLHttpRequest()
     xhr.open(options.method || 'get', url, true)
@@ -46,6 +73,33 @@ function createVars(context) {
   return str
 }
 
+Task.createTasklet = function(path) {
+  const code = `
+    export class Speaker {
+      sayHello(message) {
+        return 'Hello';
+      }
+    }
+
+    export function add(a, b) {
+      return a + b;
+    }
+  `
+  const blob = new Blob([code], { type: 'application/javascript' })
+  const worker = new Worker(URL.createObjectURL(blob))
+  let cancel = () => worker.terminate()
+
+  worker.onmessage = msg => {
+    resolve(JSON.parse(msg.data))
+    worker.terminate()
+  }
+
+  worker.onerror = err => {
+    reject(err)
+    worker.terminate()
+  }
+}
+
 Task.runInWorker = function(workerFn, context) {
   return Task(function(reject, resolve) {
     const workerCode = workerFn.toString()
@@ -62,7 +116,10 @@ Task.runInWorker = function(workerFn, context) {
   const dispatchToMain = (x) => postMessage(JSON.stringify(x))
   ${callbackCode}
   ${createVars(context)}
-  ${workerCode.substring(workerCode.indexOf('{') + 1, workerCode.lastIndexOf('}'))}`
+  ${workerCode.substring(
+    workerCode.indexOf('{') + 1,
+    workerCode.lastIndexOf('}')
+  )}`
 
     const blob = new Blob([code], { type: 'application/javascript' })
     const worker = new Worker(URL.createObjectURL(blob))
