@@ -10,7 +10,8 @@
     "clean-dist": "rimraf ./dist",
     "prestart": "yarn run clean-dist",
     "dev": "yarn run prestart && webpack --env.dev --progress --color --watch",
-    "build": "yarn run prestart && yarn run build:rollup-node && yarn run build:rollup-web",
+    "build":
+      "yarn run prestart && yarn run build:rollup-node && yarn run build:rollup-web",
     "build:rollup-node": "rollup --config rollup.config.node.js",
     "build:rollup-web": "rollup --config rollup.config.browser.js",
     "dev-server": "webpack-dev-server --env.devServer"
@@ -19,17 +20,12 @@
     "type": "git",
     "url": "git+https://YannickDot@github.com/YannickDot/taskorama.git"
   },
-  "keywords": [
-    "tiny",
-    "tasks",
-    "task",
-    "functional",
-    "JavaScript"
-  ],
+  "keywords": ["tiny", "tasks", "task", "functional", "JavaScript"],
   "engines": {
     "node": ">=4.2.4"
   },
-  "author": "Yannick Spark <sparky.creativespace@gmail.com> (https://sparkyspace.com/)",
+  "author":
+    "Yannick Spark <sparky.creativespace@gmail.com> (https://sparkyspace.com/)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/YannickDot/taskorama/issues"

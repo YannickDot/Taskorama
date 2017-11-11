@@ -39,8 +39,8 @@ TaskInstance.prototype.repeat = repeat
 TaskInstance.prototype.retry = retry
 TaskInstance.prototype.cache = cache
 
-TaskInstance.prototype.fork = function(rej, res) {
-  return this.__computation(rej, res)
+TaskInstance.prototype.fork = function(rej, res, onError) {
+  return this.__computation(rej, res, onError)
 }
 
 TaskInstance.prototype.run = function(cb) {
@@ -248,27 +248,32 @@ function cache(/*: TaskInstance*/) {
 
 function map(cb) /*: TaskInstance*/ {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     return previousTask.fork(
       reject,
       try_catch((...values) => {
         let nextValues = cb(...values)
         // console.warn('map --> ', values, nextValues)
         resolve(nextValues)
-      }, reject)
+      }, onError),
+      onError
     )
   })
 }
 
 function join() /*: TaskInstance*/ {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     let nextCancelCb
-    let previousCancel = previousTask.fork(reject, nextTask => {
-      let nextRunningTask = nextTask.fork(reject, resolve)
-      nextCancelCb = nextRunningTask.cancel
-      return { cancel: nextRunningTask.cancel }
-    })
+    let previousCancel = previousTask.fork(
+      reject,
+      nextTask => {
+        let nextRunningTask = nextTask.fork(reject, resolve, onError)
+        nextCancelCb = nextRunningTask.cancel
+        return { cancel: nextRunningTask.cancel }
+      },
+      onError
+    )
     let cancel = () => {
       if (nextCancelCb) nextCancelCb()
       previousCancel.cancel()
@@ -284,7 +289,7 @@ function chain(cb) /*: TaskInstance*/ {
 
 function combine(...callbacks) /*: TaskInstance*/ {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     return previousTask.fork(
       reject,
       try_catch(val => {
@@ -292,23 +297,25 @@ function combine(...callbacks) /*: TaskInstance*/ {
         console.warn('combine --> ', callbacks, val, nextValues, resolve)
         resolve.apply(null, nextValues)
         // resolve(...nextValues)
-      }, reject)
+      }, onError),
+      onError
     )
   })
 }
 
 function bimap(cbRej, cbRes) /*: TaskInstance*/ {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     return previousTask.fork(
       try_catch(err => {
         let nextValue = cbRej(err)
         reject(nextValue)
-      }, reject),
+      }, onError),
       try_catch(val => {
         let nextValue = cbRes(val)
         resolve(nextValue)
-      }, reject)
+      }, onError),
+      onError
     )
   })
 }
@@ -320,7 +327,7 @@ function ap(taskToApply) /*: TaskInstance*/ {
 
 function then(cb) /*: TaskInstance*/ {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     let nextCancelCb
     let previousCancel = previousTask.fork(
       reject,
@@ -334,10 +341,11 @@ function then(cb) /*: TaskInstance*/ {
         } else {
           nextTask = Task.of(nextResult)
         }
-        let nextCancel = nextTask.fork(reject, resolve)
+        let nextCancel = nextTask.fork(reject, resolve, onError)
         nextCancelCb = nextCancel.cancel
         return { cancel: nextCancel.cancel }
-      }, reject)
+      }, onError),
+      onError
     )
     let cancel = () => {
       if (nextCancelCb) nextCancelCb()
@@ -349,7 +357,7 @@ function then(cb) /*: TaskInstance*/ {
 
 function catchError(cb) /*: TaskInstance*/ {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     let nextCancelCb
     let previousCancel = previousTask.fork(
       try_catch(err => {
@@ -362,11 +370,12 @@ function catchError(cb) /*: TaskInstance*/ {
         } else {
           nextTask = Task.of(nextResult)
         }
-        let nextCancel = nextTask.fork(reject, resolve)
+        let nextCancel = nextTask.fork(reject, resolve, onError)
         nextCancelCb = nextCancel.cancel
         return { cancel: nextCancel.cancel }
-      }, reject),
-      resolve
+      }, onError),
+      resolve,
+      onError
     )
 
     let cancel = () => {
@@ -379,8 +388,8 @@ function catchError(cb) /*: TaskInstance*/ {
 
 function clone(/*: TaskInstance*/) {
   const previousTask = this
-  return Task(function(reject, resolve) {
-    return previousTask.fork(reject, resolve)
+  return Task(function(reject, resolve, onError) {
+    return previousTask.fork(reject, resolve, onError)
   })
 }
 
@@ -394,7 +403,7 @@ function repeat(times /*: number*/ = 2) /*: TaskInstance*/ {
 
 function retry(times /*: number*/ = 2) {
   const previousTask = this
-  return Task(function(reject, resolve) {
+  return Task(function(reject, resolve, onError) {
     let fallbackTask = previousTask
     let retryiedTask = previousTask
     for (let i = 0; i < times; i++) {
@@ -403,12 +412,16 @@ function retry(times /*: number*/ = 2) {
         return fallbackTask
       })
     }
-    return previousTask.fork(reject, resolve)
+    return previousTask.fork(reject, resolve, onError)
   })
 }
 
+function throwError(err) {
+  console.log(err)
+}
+
 function makeForkable(subscription) {
-  return function forkable(rej, res) {
+  return function forkable(rej, res, onError = throwError) {
     let __value,
       __error,
       __isCancelled = false,
@@ -488,7 +501,20 @@ function makeForkable(subscription) {
       // trigger promise
     }
 
-    const runningTask = subscription(wrappedReject, wrappedResolve) // flipping arguments
+    const wrappedOnError = err => {
+      if (checkTermination()) {
+        return console.error(
+          `It is not possible to resolve/reject a Task more than once.`
+        )
+      }
+      onError(err)
+    }
+
+    const runningTask = subscription(
+      wrappedReject,
+      wrappedResolve,
+      wrappedOnError
+    ) // flipping arguments
     if (runningTask && runningTask.cancel) {
       execution.cancel = () => {
         __isCancelled = true
