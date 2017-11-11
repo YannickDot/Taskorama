@@ -51,7 +51,7 @@ Task.createTasklet = function(path) {
   }
 }
 
-Task.runInWorker = function(workerFn, context) {
+Task.runInWorker = function(workerFn, context = {}) {
   return Task(function(reject, resolve, onError) {
     const workerCode = workerFn.toString()
     const callback = workerCode.substring(
