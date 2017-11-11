@@ -46,8 +46,9 @@ const myTimeoutTask = Task(function (reject, resolve) {
 
 // Start `myTimeoutTask`
 const myTimeoutExec = myTimeoutTask.fork(
-  (err) => console.error(err),
-  (res) => console.log(res)
+  (rej) => console.log('failure:', rej),
+  (res) => console.log('success:', res),
+  (err) => console.error('caught error:', err)
 )
 
 // Cancel `myTimeoutTask` when you need to !
@@ -55,7 +56,7 @@ myTimeoutExec.cancel()
 
 ```
 
-<p align="center">It's like a Promise but <strong>deferrable</strong> and <strong>cancellable</strong> 🤗 </p>
+<p align="center">It's like a Promise but <strong>pure</strong>, <strong>deferrable</strong> and <strong>cancellable</strong> 🤗 </p>
 
 
 ## Install
@@ -101,16 +102,20 @@ const task = Task((resolve, reject) => {
 ### Running (forking) and cancelling a Task
 
 ```js
-// the error handling effect
-const errorEffect = (err) => {}
+// the failure handler
+const failureEffect = (err) => {}
 
-// the success handling effect
+// the success handler
 const successEffect = (res) => {}
+
+// the error handler (optional)
+const errorEffect = (res) => {}
 
 // Let's start the task
 const runningTask = task.fork(
-  errorEffect,
-  successEffect
+  failureEffect,
+  successEffect,
+  errorEffect
 )
 
 // Let's cancel it
