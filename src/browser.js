@@ -57,8 +57,6 @@ ${userWorkerCode.substring(
     userWorkerCode.lastIndexOf('}')
   )}
   `
-
-  console.log(code)
   return code
 }
 
