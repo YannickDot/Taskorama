@@ -28,8 +28,8 @@ function buildWorkerCode(fn, context) {
     } else if (index === 1) {
       return (
         (key.length !== 0 &&
-          key !== 'taskorama' &&
-          `var ${key} = taskorama;`) ||
+          `importScripts('https://unpkg.com/taskorama');
+          var ${key} = taskorama;`) ||
         ''
       )
     } else if (index === 2) {
@@ -50,8 +50,7 @@ function buildWorkerCode(fn, context) {
   const argsCode = argKeys.map(mapArgToVariable).join('\n')
 
   const code = `
-importScripts('https://unpkg.com/taskorama')
-const DISPATCH_TO_MAIN_THREAD = (x) => postMessage(JSON.stringify(x))
+var DISPATCH_TO_MAIN_THREAD = (x) => postMessage(JSON.stringify(x))
 ${argsCode}
 ${userWorkerCode.substring(
     userWorkerCode.indexOf('{') + 1,
