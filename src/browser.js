@@ -14,14 +14,75 @@ Task.fetch = function(
   })
 }
 
-function createVars(context) {
-  let str = Object.keys(context)
-    .reduce((acc, key) => {
-      acc.push(`const ${key} = ${JSON.stringify(context[key])};`)
-      return acc
-    }, [])
-    .join('\n')
-  return str
+function serializeParams(context) {
+  const pairs = Object.keys(context)
+    .map(key => `${key} : ${JSON.stringify(context[key])}`)
+    .join(', ')
+  return `{ ${pairs} }`
+}
+
+function buildWorkerCode(fn, context) {
+  function mapArgToVariable(key, index) {
+    if (index === 0) {
+      return (key.length !== 0 && `var ${key} = DISPATCH_TO_MAIN_THREAD;`) || ''
+    } else if (index === 1) {
+      return (
+        (key.length !== 0 &&
+          key !== 'taskorama' &&
+          `var ${key} = taskorama;`) ||
+        ''
+      )
+    } else if (index === 2) {
+      return (
+        (key.length !== 0 && `var ${key} = ${serializeParams(context)}`) || ''
+      )
+    } else {
+      return ''
+    }
+  }
+
+  const userWorkerCode = fn.toString()
+  const argumentsStr = userWorkerCode.substring(
+    userWorkerCode.indexOf('(') + 1,
+    userWorkerCode.indexOf(')')
+  )
+  const argKeys = argumentsStr.split(',').map(s => s.trim())
+  const argsCode = argKeys.map(mapArgToVariable).join('\n')
+
+  const code = `
+importScripts('https://unpkg.com/taskorama')
+const DISPATCH_TO_MAIN_THREAD = (x) => postMessage(JSON.stringify(x))
+${argsCode}
+${userWorkerCode.substring(
+    userWorkerCode.indexOf('{') + 1,
+    userWorkerCode.lastIndexOf('}')
+  )}
+  `
+
+  console.log(code)
+  return code
+}
+
+Task.runInWorker = function(workerFn, context = {}) {
+  return Task(function(reject, resolve, onError) {
+    const code = buildWorkerCode(workerFn, context)
+    const blob = new Blob([code], { type: 'application/javascript' })
+    const worker = new Worker(URL.createObjectURL(blob))
+    const cancel = () => worker.terminate()
+
+    worker.onmessage = function(msg) {
+      resolve(JSON.parse(msg.data))
+      worker.terminate()
+    }
+
+    worker.onerror = function(err) {
+      // reject(err)
+      onError(err)
+      worker.terminate()
+    }
+
+    return { cancel }
+  })
 }
 
 Task.createTasklet = function(path) {
@@ -49,46 +110,6 @@ Task.createTasklet = function(path) {
     reject(err)
     worker.terminate()
   }
-}
-
-Task.runInWorker = function(workerFn, context = {}) {
-  return Task(function(reject, resolve, onError) {
-    const workerCode = workerFn.toString()
-    const callback = workerCode.substring(
-      workerCode.indexOf('(') + 1,
-      workerCode.indexOf(')')
-    )
-    const callbackCode =
-      (callback.length !== 0 && `const ${callback} = dispatchToMain`) || ''
-
-    const code = `
-importScripts('https://unpkg.com/taskorama')
-const Task = taskorama
-const dispatchToMain = (x) => postMessage(JSON.stringify(x))
-${callbackCode}
-${createVars(context)}
-${workerCode.substring(
-      workerCode.indexOf('{') + 1,
-      workerCode.lastIndexOf('}')
-    )}`
-
-    const blob = new Blob([code], { type: 'application/javascript' })
-    const worker = new Worker(URL.createObjectURL(blob))
-    let cancel = () => worker.terminate()
-
-    worker.onmessage = function(msg) {
-      resolve(JSON.parse(msg.data))
-      worker.terminate()
-    }
-
-    worker.onerror = function(err) {
-      reject(err)
-      // onError(err)
-      worker.terminate()
-    }
-
-    return { cancel }
-  })
 }
 
 export default Task
