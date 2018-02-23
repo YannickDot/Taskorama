@@ -7,7 +7,7 @@
   </p>
   <h1 align="center">Taskorama</h1>
   <p align="center">
-    <b align="center">Taskorama is a tiny Task data type for JavaScript (~2.3Kb gzipped)</b>
+    <b align="center">Taskorama is a Task/Future data type for JavaScript</b>
   </p>
   <p align="center">
     <a href="https://www.npmjs.org/package/taskorama"><img src="https://img.shields.io/npm/v/taskorama.svg?style=flat" alt="npm"></a> <a href="https://github.com/YannickDot/taskorama/blob/master/LICENSE"><img src="http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat" alt="licence"></a>
@@ -18,9 +18,6 @@
 <br/>
 <br/>
 
-<p align="center">
-  <b align="center">UPDATE: v2.0.0 is out! See the <a href="https://github.com/YannickDot/taskorama/releases/tag/v2.0.0" target="_blank">changelog<a/></b>
-</p>
 
 Taskorama is an implementation of the Task data type.
 It is used to express **concurrent**, **asynchronous** and **cancellable computations** using **functional programming** constructs.
@@ -136,7 +133,7 @@ I like using Promises but they have major design flaws IMHO :
 Tasks happen to be really simple and have richer semantics than Promises :
 
 - Tasks are pure : they do not perform any side-effect as long as they are not executed by calling `.fork()` .
-- Tasks make a clear separation between **definition** and **execution**, while Promises mix the two. **@andrestaltz** explained it way better than me in [this comment](https://gist.github.com/jakearchibald/199f4e44880aa07c0b78f025238d14ed#gistcomment-2014667)
+- Tasks make a clear separation between **definition** and **execution**, while Promises mix the two. **@andrestaltz** explained it way better than me in [this comment](https://gist.github.com/jakearchibald/199f4e44880aa07c0b78f025238d14ed#gistcomment-2014667) and [this post](https://staltz.com/promises-are-not-neutral-enough.html)
 
 So I decided to replace Promises by Tasks in my code in order to separate pure data processing resulting of an async computation and side-effects.
 
