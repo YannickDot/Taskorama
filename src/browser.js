@@ -4,7 +4,7 @@ import Task from './index.js'
 
 import { leanFetch } from './leanFetch.js'
 
-Task.fetch = function(
+export function fetch(
   url /*: string*/,
   options /*: any*/ = {}
 ) /*: TaskInstance*/ {
@@ -13,6 +13,8 @@ Task.fetch = function(
     return { cancel: cancelRequest }
   })
 }
+
+Task.fetch = fetch
 
 function serializeParams(context) {
   const pairs = Object.keys(context)
@@ -60,7 +62,7 @@ ${userWorkerCode.substring(
   return code
 }
 
-Task.runInWorker = function(workerFn, context = {}) {
+export function runInWorker(workerFn, context = {}) {
   return Task(function(reject, resolve, onError) {
     const code = buildWorkerCode(workerFn, context)
     const blob = new Blob([code], { type: 'application/javascript' })
@@ -81,6 +83,8 @@ Task.runInWorker = function(workerFn, context = {}) {
     return { cancel }
   })
 }
+
+Task.runInWorker = runInWorker
 
 Task.createTasklet = function(path) {
   const code = `
@@ -110,3 +114,4 @@ Task.createTasklet = function(path) {
 }
 
 export default Task
+export * from './index.js'

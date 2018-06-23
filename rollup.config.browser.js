@@ -6,6 +6,7 @@ export default {
   entry: 'src/browser.js',
   format: 'umd',
   moduleName: 'taskorama',
+  exports: 'named',
   plugins: [
     resolve(),
     babel({
